@@ -1,0 +1,9 @@
+Route::get('/dashboard',      ...)->name('dashboard');
+Route::get('/boards',         ...)->name('boards.index');
+Route::get('/meetings',       ...)->name('meetings.index');
+Route::get('/my-tasks',       ...)->name('my-tasks');
+Route::get('/calendar',       ...)->name('calendar');
+Route::get('/reports',        ...)->name('reports');
+Route::get('/members',        ...)->name('members');
+Route::get('/settings',       ...)->name('settings');
+Route::post('/logout',        ...)->name('logout');
