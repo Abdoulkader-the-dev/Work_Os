@@ -1,58 +1,103 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 UniPod-To-Do-List (En cours de développement 🚧)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> **⚠️ AVERTISSEMENT : Ce projet est actuellement en cours de développement et n'est pas encore terminé.**
 
-## About Laravel
+UniPod-To-Do-List est une application de gestion de tâches et de projets conçue pour offrir une interface moderne, réactive et fluide. Elle permet la création d'espaces de travail (Workspaces), de tableaux (Boards) sous différentes vues (Tableau, Kanban, Calendrier), de groupes de tâches, et de planifier des réunions.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Ce document est un aperçu exhaustif de l'état actuel du projet : ce qui a été fait, comment le tester/modifier, et ce qu'il reste à accomplir.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠️ Stack Technique
 
-## Learning Laravel
+- **Backend :** Laravel 11 (PHP 8.3+)
+- **Frontend :** Livewire 3, Alpine.js, Tailwind CSS (via Vite)
+- **Base de données :** SQLite (par défaut)
+- **Authentification :** Laravel Breeze (Session)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## ✅ Ce qui a été accompli (État Actuel)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 🎨 Frontend (Vues & Composants)
+- **Intégration du Template :** Mise en place d'une structure de base avec des composants réutilisables grâce à Laravel Blade et Tailwind CSS.
+- **Routes & Pages (Vues Statiques / Dynamiques) :**
+  - Tableau de bord (`/dashboard`)
+  - Gestion des Tableaux (`/boards`) avec 3 vues initialisées (Livewire) : `BoardTable`, `BoardKanban`, `BoardCalendar`.
+  - Gestion des Réunions (`/meetings`) avec création et édition (`MeetingList`, `MeetingEditor`).
+  - Autres pages préparées (Blade) : Mes Tâches (`my-tasks`), Calendrier global (`calendar`), Rapports (`reports`), Membres (`members`), Paramètres (`settings`), et Notifications (`notifications`).
+- **Composants Livewire (Logique UI) :**
+  - Des composants Livewire ont été créés pour gérer la réactivité sans rechargement de page dans `app/Livewire` (ex: `Items/ItemPanel`, `Partials/Notifications`).
+- **Authentification :** Les vues de connexion, d'inscription, de mot de passe oublié et de profil ont été générées et stylisées par Laravel Breeze.
 
-## Agentic Development
+### ⚙️ Backend (Architecture & Logique)
+- **Configuration Laravel :** Installation propre de Laravel 11.
+- **Authentification & Sécurité :** Système d'authentification Breeze fonctionnel. Les routes principales sont protégées par le middleware `auth`.
+- **Routage :** Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées pour toutes les entités principales (Boards, Meetings, etc.).
+- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend (ex: pagination, filtres, soumission de formulaires).
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 🗄️ Base de Données (Modèles & Migrations)
+L'architecture de la base de données relationnelle a été pensée et traduite en migrations Laravel (`database/migrations`) et Modèles Eloquent (`app/Models`) :
+- `User` : Utilisateurs du système (Authentification).
+- `Workspace` : Espaces de travail regroupant plusieurs tableaux.
+- `Board` : Tableaux de bord de tâches.
+- `Group` : Groupes ou colonnes de tâches (ex: "À faire", "En cours" pour le Kanban).
+- `Item` : Les tâches individuelles.
+- `Comment` : Commentaires liés aux tâches.
+- `Meeting` : Planification de réunions (Titre, horaires, description).
+- `Notification` : Système de notifications pour les utilisateurs.
 
-```bash
-composer require laravel/boost --dev
+---
 
-php artisan boost:install
-```
+## 🔍 Comment vérifier et modifier le projet
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+### Prérequis
+- PHP 8.3+
+- Composer
+- Node.js & NPM
+- SQLite (ou tout autre SGBD si vous modifiez le `.env`)
 
-## Contributing
+### Installation & Lancement
+1. Clonez le dépôt.
+2. Installez les dépendances PHP : `composer install`
+3. Installez les dépendances JS : `npm install`
+4. Créez votre fichier d'environnement : `cp .env.example .env`
+5. Générez la clé de l'application : `php artisan key:generate`
+6. Créez la base de données SQLite (si non existante) et lancez les migrations :
+   ```bash
+   touch database/database.sqlite
+   php artisan migrate
+   ```
+7. Démarrez les serveurs de développement simultanément :
+   ```bash
+   npm run dev
+   php artisan serve
+   ```
+8. Accédez à l'application via `http://localhost:8000`.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Modification de l'application
+- **Pour le Design & l'UI :** Modifiez les fichiers `.blade.php` dans `resources/views/`. Les classes Tailwind s'appliqueront automatiquement grâce à `npm run dev` (Vite).
+- **Pour les interactions réactives :** Modifiez les fichiers PHP dans `app/Livewire/` et leurs vues associées dans `resources/views/livewire/`.
+- **Pour la Base de données :** Créez de nouvelles migrations (`php artisan make:migration`), modifiez celles dans `database/migrations/`, et n'oubliez pas d'actualiser avec `php artisan migrate:fresh`. Ajoutez vos relations dans les modèles correspondants situés dans `app/Models/`.
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 📝 Ce qu'il reste à faire (To-Do List du Projet)
 
-## Security Vulnerabilities
+Bien que la structure de base soit présente, plusieurs fonctionnalités clés doivent encore être implémentées pour rendre l'application pleinement fonctionnelle :
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 🎨 Frontend (À faire)
+- [ ] **Kanban Drag & Drop :** Rendre la vue `BoardKanban` pleinement interactive avec SortableJS (déjà présent dans `package.json`).
+- [ ] **Dynamisation des vues statiques :** Connecter les pages `Mes Tâches`, `Calendrier`, `Rapports`, et `Membres` aux vraies données Livewire/Eloquent.
+- [ ] **UI/UX Polishing :** Ajouter des transitions Alpine.js pour les modales, les menus déroulants et les notifications flash.
+- [ ] **Éditeur de texte riche :** Intégrer Trix (déjà configuré) pour les descriptions de tâches et les commentaires.
 
-## License
+### ⚙️ Backend (À faire)
+- [ ] **Logique CRUD complète :** Finaliser la création, lecture, modification et suppression pour toutes les entités (Boards, Groups, Items, Meetings).
+- [ ] **Validation des données :** S'assurer que toutes les entrées utilisateurs (Livewire forms) sont strictement validées (Form Requests / Livewire Rules).
+- [ ] **Gestion des rôles et autorisations :** Implémenter des Policies Laravel pour restreindre l'accès aux Workspaces et Boards selon le rôle de l'utilisateur (Admin, Membre, Lecteur).
+- [ ] **Temps réel (WebSockets) :** Configurer Laravel Echo avec Pusher ou Laravel Reverb pour la mise à jour en temps réel des boards et l'envoi de notifications instantanées.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 🗄️ Base de Données (À faire)
+- [ ] **Seeders & Factories :** Créer des données factices (Faker) pour remplir la base de données rapidement et faciliter les tests de l'interface (ex: générer 50 tâches, 5 boards, etc.).
+- [ ] **Optimisation des requêtes :** Prévenir les problèmes "N+1 queries" en utilisant l'Eager Loading (`with()`) dans les contrôleurs Livewire lors de l'affichage des relations (ex: Charger un Board avec ses Groupes et Items).
