@@ -15,7 +15,13 @@ class BoardTable extends Component
     }
 
     public function render()
-    {
-        return view('livewire.boards.board-table');
-    }
+{
+    $groups = $this->board
+        ->groups()
+        ->with(['items' => fn($q) => $q->with('assignees')->orderBy('order')])
+        ->orderBy('order')
+        ->get();
+
+    return view('livewire.boards.board-table', compact('groups'));
+}
 }

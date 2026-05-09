@@ -4,8 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Livewire\Boards\BoardTable;
 use App\Livewire\Boards\BoardKanban;
 use App\Livewire\Boards\BoardCalendar;
-use App\Livewire\Meetings\MeetingList;
-use App\Livewire\Meetings\MeetingEditor;
 
 // Racine → dashboard
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -24,8 +22,8 @@ Route::middleware(['auth'])->group(function () {
     // Réunions
     Route::get('/meetings',                fn() => view('pages.meetings'))->name('meetings.index');
     Route::get('/meetings/create',         fn() => view('pages.meeting-create'))->name('meetings.create');
-    Route::get('/meetings/{meeting}',      fn($m) => view('pages.meeting-show', ['meetingId' => $m]))->name('meetings.show');
     Route::get('/meetings/{meeting}/edit', fn($m) => view('pages.meeting-edit', ['meetingId' => $m]))->name('meetings.edit');
+    Route::get('/meetings/{meeting}',      fn($m) => view('pages.meeting-show', ['meetingId' => $m]))->name('meetings.show');
 
     // Autres
     Route::get('/my-tasks',      fn() => view('pages.my-tasks'))->name('my-tasks');
@@ -37,5 +35,8 @@ Route::middleware(['auth'])->group(function () {
 
 });
 
-// Auth routes (générées par Breeze)
-require __DIR__.'/auth.php';git 
+// Auth routes
+require __DIR__.'/auth.php';
+Route::get('/profile', fn() => view('pages.settings'))->name('profile.edit');
+Route::patch('/profile', fn() => back())->name('profile.update');
+Route::delete('/profile', fn() => redirect('/'))->name('profile.destroy');

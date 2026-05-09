@@ -1,13 +1,14 @@
 {{-- resources/views/livewire/partials/notifications.blade.php --}}
 
-<div style="position:relative;" x-data @click.outside="$wire.close()">
+{{-- Open/close géré par Alpine uniquement pour éviter les conflits Livewire --}}
+<div x-data="{ open: false }" style="position:relative;">
 
     {{-- ── TRIGGER — Cloche ── --}}
-    <button wire:click="toggle"
+    <button @click="open = !open"
             style="width:36px;height:36px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;color:var(--text-2);transition:all .15s;"
             onmouseover="this.style.background='#e8e8e6';this.style.borderColor='var(--border-md)'"
             onmouseout="this.style.background='var(--bg)';this.style.borderColor='var(--border)'"
-            :aria-expanded="$wire.isOpen"
+            :aria-expanded="open"
             aria-label="Notifications">
 
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -17,25 +18,24 @@
 
         {{-- Dot badge non lus --}}
         @if($unreadCount > 0)
-            <div style="position:absolute;top:5px;right:5px;min-width:7px;height:7px;background:var(--yellow);border-radius:50%;border:1.5px solid white;display:flex;align-items:center;justify-content:center;">
-                @if($unreadCount > 9)
-                    <span style="font-size:8px;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-1);padding:0 2px;"></span>
-                @endif
-            </div>
+            <div style="position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--yellow);border-radius:50%;border:1.5px solid white;"></div>
         @endif
     </button>
 
     {{-- ── DROPDOWN ── --}}
-    <div x-show="$wire.isOpen"
-         x-transition:enter="transition ease-out duration-180"
-         x-transition:enter-start="opacity-0 translate-y-[-6px]"
-         x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-140"
-         x-transition:leave-start="opacity-100 translate-y-0"
-         x-transition:leave-end="opacity-0 translate-y-[-6px]"
+    <div x-show="open"
+         x-cloak
+         @click.outside="open = false"
+         @keydown.escape.window="open = false"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 translateY-[-4px]"
+         x-transition:enter-end="opacity-100 translateY-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
          style="position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;">
 
-        {{-- Header dropdown --}}
+        {{-- Header --}}
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Notifications</span>
@@ -47,19 +47,17 @@
             </div>
             @if($unreadCount > 0)
                 <button wire:click="markAllAsRead"
-                        style="font-size:11px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:opacity .15s;"
-                        onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                        style="font-size:11px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">
                     Tout marquer lu
                 </button>
             @endif
         </div>
 
         {{-- Liste --}}
-        <div style="max-height:420px;overflow-y:auto;">
+        <div style="max-height:400px;overflow-y:auto;">
             @forelse($this->notifications as $notif)
                 @php
                     $isUnread = is_null($notif->read_at);
-                    $type     = $notif->type ?? 'default';
                     $iconMap  = [
                         'mention'    => ['color' => '#0091CD', 'label' => '@'],
                         'status'     => ['color' => '#f97316', 'label' => '○'],
@@ -68,22 +66,19 @@
                         'comment'    => ['color' => '#6b6b68', 'label' => '…'],
                         'default'    => ['color' => '#a3a39f', 'label' => '·'],
                     ];
-                    $icon = $iconMap[$type] ?? $iconMap['default'];
+                    $icon = $iconMap[$notif->type ?? 'default'] ?? $iconMap['default'];
                 @endphp
 
                 <div wire:click="markAsRead({{ $notif->id }})"
                      style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }};"
                      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }}'">
 
-                    {{-- Dot non-lu --}}
                     <div style="width:7px;height:7px;border-radius:50%;background:{{ $isUnread ? 'var(--blue)' : 'transparent' }};flex-shrink:0;margin-top:5px;"></div>
 
-                    {{-- Icône type --}}
-                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:{{ $icon['color'] }}18;color:{{ $icon['color'] }};">
+                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:{{ $icon['color'] }}22;color:{{ $icon['color'] }};">
                         {{ $icon['label'] }}
                     </div>
 
-                    {{-- Contenu --}}
                     <div style="flex:1;min-width:0;">
                         <div style="font-size:13px;color:var(--text-1);line-height:1.4;">
                             {!! $notif->message ?? '' !!}
@@ -93,13 +88,11 @@
                         </div>
                         @if($notif->action_url ?? false)
                             <a href="{{ $notif->action_url }}"
-                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;"
-                               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;">
                                 → {{ $notif->action_label ?? 'Voir' }}
                             </a>
                         @endif
                     </div>
-
                 </div>
             @empty
                 <div style="text-align:center;padding:40px 24px;">
@@ -114,8 +107,7 @@
         @if($this->notifications->count() > 0)
             <div style="padding:10px 18px;border-top:1px solid var(--border);text-align:center;">
                 <a href="{{ route('notifications.index') }}"
-                   style="font-size:12px;font-weight:500;color:var(--blue);text-decoration:none;transition:opacity .15s;"
-                   onmouseover="this.style.opacity='.7'" onmouseout="this.style.opacity='1'">
+                   style="font-size:12px;font-weight:500;color:var(--blue);text-decoration:none;">
                     Voir toutes les notifications →
                 </a>
             </div>

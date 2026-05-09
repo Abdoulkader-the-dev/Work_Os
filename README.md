@@ -20,21 +20,23 @@ Ce document est un aperçu exhaustif de l'état actuel du projet : ce qui a ét�
 ## ✅ Ce qui a été accompli (État Actuel)
 
 ### 🎨 Frontend (Vues & Composants)
-- **Intégration du Template :** Mise en place d'une structure de base avec des composants réutilisables grâce à Laravel Blade et Tailwind CSS.
+- **Intégration du Template & Styles :** Mise en place d'une structure de base avec des composants réutilisables grâce à Laravel Blade et Tailwind CSS. Améliorations récentes des layouts globaux (`app`, `guest`, `navigation`).
 - **Routes & Pages (Vues Statiques / Dynamiques) :**
   - Tableau de bord (`/dashboard`)
   - Gestion des Tableaux (`/boards`) avec 3 vues initialisées (Livewire) : `BoardTable`, `BoardKanban`, `BoardCalendar`.
-  - Gestion des Réunions (`/meetings`) avec création et édition (`MeetingList`, `MeetingEditor`).
-  - Autres pages préparées (Blade) : Mes Tâches (`my-tasks`), Calendrier global (`calendar`), Rapports (`reports`), Membres (`members`), Paramètres (`settings`), et Notifications (`notifications`).
+  - Gestion des Réunions (`/meetings`) avec création (`meeting-create`), liste (`MeetingList`), détails (`meeting-show`) et édition (`meeting-edit`).
+  - Autres pages préparées (Blade) : Mes Tâches (`my-tasks`), Calendrier global (`calendar`), Rapports (`reports`), Membres (`members`), et Paramètres (`settings`).
 - **Composants Livewire (Logique UI) :**
-  - Des composants Livewire ont été créés pour gérer la réactivité sans rechargement de page dans `app/Livewire` (ex: `Items/ItemPanel`, `Partials/Notifications`).
-- **Authentification :** Les vues de connexion, d'inscription, de mot de passe oublié et de profil ont été générées et stylisées par Laravel Breeze.
+  - Le système de notifications (`Partials/Notifications`) a été enrichi avec une logique backend propre et une vue dédiée pour afficher des alertes interactives.
+  - Autres composants pour la réactivité : `Items/ItemPanel`, gestion des boards (comme `BoardTable`).
+- **Profil Utilisateur :** Ajout des pages de gestion de profil (édition, mise à jour, suppression) gérées avec les routes Laravel de base.
+- **Authentification :** Les vues de connexion, d'inscription, de mot de passe oublié ont été générées et stylisées par Laravel Breeze.
 
 ### ⚙️ Backend (Architecture & Logique)
 - **Configuration Laravel :** Installation propre de Laravel 11.
 - **Authentification & Sécurité :** Système d'authentification Breeze fonctionnel. Les routes principales sont protégées par le middleware `auth`.
-- **Routage :** Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées pour toutes les entités principales (Boards, Meetings, etc.).
-- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend (ex: pagination, filtres, soumission de formulaires).
+- **Routage :** Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées pour toutes les entités principales (Boards, Meetings, Profil, etc.).
+- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend (ex: ajout de logique dans `Notifications.php` et `BoardTable.php`).
 
 ### 🗄️ Base de Données (Modèles & Migrations)
 L'architecture de la base de données relationnelle a été pensée et traduite en migrations Laravel (`database/migrations`) et Modèles Eloquent (`app/Models`) :
@@ -73,6 +75,7 @@ L'architecture de la base de données relationnelle a été pensée et traduite 
    npm run dev
    php artisan serve
    ```
+   *(Note : Assurez-vous d'utiliser `php artisan serve` pour un routage correct avec Laravel, plutôt que `php -S`)*
 8. Accédez à l'application via `http://localhost:8000`.
 
 ### Modification de l'application
@@ -89,7 +92,7 @@ Bien que la structure de base soit présente, plusieurs fonctionnalités clés d
 ### 🎨 Frontend (À faire)
 - [ ] **Kanban Drag & Drop :** Rendre la vue `BoardKanban` pleinement interactive avec SortableJS (déjà présent dans `package.json`).
 - [ ] **Dynamisation des vues statiques :** Connecter les pages `Mes Tâches`, `Calendrier`, `Rapports`, et `Membres` aux vraies données Livewire/Eloquent.
-- [ ] **UI/UX Polishing :** Ajouter des transitions Alpine.js pour les modales, les menus déroulants et les notifications flash.
+- [ ] **UI/UX Polishing :** Ajouter des transitions Alpine.js pour les modales, les menus déroulants (notamment pour les nouvelles notifications).
 - [ ] **Éditeur de texte riche :** Intégrer Trix (déjà configuré) pour les descriptions de tâches et les commentaires.
 
 ### ⚙️ Backend (À faire)

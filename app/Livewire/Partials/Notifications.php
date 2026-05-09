@@ -5,9 +5,11 @@ namespace App\Livewire\Partials;
 
 use App\Models\Notification;
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 
 class Notifications extends Component
 {
+    #[Locked]
     public bool $isOpen      = false;
     public int  $unreadCount = 0;
 
