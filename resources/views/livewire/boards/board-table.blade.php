@@ -21,8 +21,7 @@
 
     {{-- ── BULK ACTION BAR ── --}}
     <div x-show="$wire.bulkMode"
-         x-transition
-         style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--blue-light);border:1px solid var(--blue);border-radius:10px;margin-bottom:14px;">
+         style="display:none;align-items:center;gap:12px;padding:10px 16px;background:var(--blue-light);border:1px solid var(--blue);border-radius:10px;margin-bottom:14px;">
         <span style="font-size:13px;font-weight:500;color:var(--blue);">
             <span x-text="$wire.bulkSelected.length"></span> tâche(s) sélectionnée(s)
         </span>
@@ -61,18 +60,14 @@
                  wire:click="toggleGroup({{ $group->id }})"
                  onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
 
-                {{-- Chevron --}}
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;{{ in_array($group->id, $openGroups) ? '' : 'transform:rotate(-90deg)' }}">
                     <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
 
-                {{-- Barre couleur --}}
                 <div style="width:4px;height:16px;border-radius:2px;background:{{ $group->color ?? '#0091CD' }};flex-shrink:0;"></div>
 
-                {{-- Nom --}}
                 <span style="font-size:13px;font-weight:600;letter-spacing:-0.01em;">{{ $group->name }}</span>
 
-                {{-- Count --}}
                 <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);background:var(--bg);padding:1px 7px;border-radius:20px;">
                     {{ $group->items->count() }}
                 </span>
@@ -83,7 +78,6 @@
                 <div style="margin-top:4px;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
                     <table style="width:100%;border-collapse:collapse;">
 
-                        {{-- Thead --}}
                         <thead>
                             <tr style="border-bottom:1px solid var(--border);">
                                 <th style="width:40px;padding:8px 10px;">
@@ -119,7 +113,7 @@
                                     {{-- Nom --}}
                                     <td style="padding:10px;border-top:1px solid var(--border);"
                                         wire:click="openItemPanel({{ $item->id }})">
-                                        @if($editingCell['item_id'] ?? null === $item->id && $editingCell['field'] ?? '' === 'name')
+                                        @if(($editingCell['item_id'] ?? null) == $item->id && ($editingCell['field'] ?? '') === 'name')
                                             <input type="text"
                                                    value="{{ $item->name }}"
                                                    style="width:100%;background:transparent;border:none;border-bottom:2px solid var(--blue);outline:none;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;padding:0 0 2px;"
@@ -154,11 +148,14 @@
                                                     'ongoing'  => 'Continu',
                                                     default    => ucfirst($item->status)
                                                 } }}
-                                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:.6;"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                                                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:.6;">
+                                                    <path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                                                </svg>
                                             </button>
 
-                                            <div x-show="open" x-transition
-                                                 style="position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:170px;">
+                                            {{-- Dropdown statut — display:none natif ── --}}
+                                            <div x-show="open"
+                                                 style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:170px;">
                                                 @foreach(['done' => 'Achevé', 'progress' => 'En cours', 'todo' => 'Non commencé', 'blocked' => 'Bloqué', 'ongoing' => 'Continu'] as $val => $label)
                                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
@@ -177,7 +174,7 @@
                                         <div style="display:flex;align-items:center;cursor:pointer;"
                                              wire:click="openItemPanel({{ $item->id }})">
                                             @foreach($item->assignees->take(3) as $assignee)
-                                                <div style="width:26px;height:26px;border-radius:50%;background:var(--text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;border:2px solid white;margin-left:-6px;first:margin-left:0;"
+                                                <div style="width:26px;height:26px;border-radius:50%;background:var(--text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;border:2px solid white;margin-left:-6px;"
                                                      title="{{ $assignee->name }}">
                                                     {{ strtoupper(substr($assignee->name, 0, 2)) }}
                                                 </div>
@@ -203,8 +200,10 @@
                                                 <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:{{ match($item->priority) { 'critique'=>'#8b5cf6','haute'=>'#ef4444','moyenne'=>'#FFD100','basse'=>'#22c55e',default=>'#a3a39f'} }};"></span>
                                                 {{ ucfirst($item->priority ?? 'moyenne') }}
                                             </button>
-                                            <div x-show="open" x-transition
-                                                 style="position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:140px;">
+
+                                            {{-- Dropdown priorité — display:none natif ── --}}
+                                            <div x-show="open"
+                                                 style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:140px;">
                                                 @foreach(['critique'=>['#8b5cf6','Critique'],'haute'=>['#ef4444','Haute'],'moyenne'=>['#FFD100','Moyenne'],'basse'=>['#22c55e','Basse']] as $val=>[$color,$label])
                                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
@@ -229,7 +228,7 @@
 
                                     {{-- Livrable --}}
                                     <td style="padding:10px;border-top:1px solid var(--border);" @click.stop>
-                                        @if($editingCell['item_id'] ?? null === $item->id && $editingCell['field'] ?? '' === 'deliverable')
+                                        @if(($editingCell['item_id'] ?? null) == $item->id && ($editingCell['field'] ?? '') === 'deliverable')
                                             <input type="text"
                                                    value="{{ $item->deliverable }}"
                                                    style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--blue);outline:none;font-size:12px;font-family:'DM Sans',sans-serif;padding:0 0 2px;"
@@ -245,7 +244,7 @@
                                         @endif
                                     </td>
 
-                                    {{-- Actions --}}
+                                    {{-- Actions ··· --}}
                                     <td style="padding:10px;border-top:1px solid var(--border);text-align:center;" @click.stop>
                                         <div x-data="{ open: false }" style="position:relative;display:inline-block;">
                                             <button @click="open = !open" @click.outside="open = false"
@@ -253,8 +252,10 @@
                                                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
                                                 ···
                                             </button>
-                                            <div x-show="open" x-transition
-                                                 style="position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
+
+                                            {{-- Dropdown actions — display:none natif ── --}}
+                                            <div x-show="open"
+                                                 style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
                                                 <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                                      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
                                                      wire:click="openItemPanel({{ $item->id }})" @click="open=false">
@@ -277,8 +278,7 @@
                             {{-- Add item row --}}
                             <tr>
                                 <td colspan="8" style="padding:0;border-top:1px solid var(--border);">
-                                    <div x-data="{ adding: false }"
-                                         style="padding:8px 52px;">
+                                    <div x-data="{ adding: false }" style="padding:8px 52px;">
                                         <div x-show="!adding"
                                              @click="adding = true"
                                              style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-3);cursor:pointer;width:fit-content;padding:4px 8px;border-radius:6px;transition:all .15s;"
@@ -286,12 +286,12 @@
                                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                                             Ajouter une tâche
                                         </div>
-                                        <div x-show="adding" x-transition style="display:flex;align-items:center;gap:8px;">
+                                        <div x-show="adding"
+                                             style="display:none;align-items:center;gap:8px;">
                                             <input type="text"
                                                    wire:model="newItemName"
                                                    placeholder="Nom de la tâche..."
                                                    style="flex:1;font-size:13px;background:transparent;border:none;border-bottom:2px solid var(--blue);outline:none;padding:4px 0;font-family:'DM Sans',sans-serif;"
-                                                   autofocus
                                                    x-ref="newInput"
                                                    x-init="$watch('adding', v => v && $nextTick(() => $refs.newInput?.focus()))"
                                                    wire:keydown.enter="addItem({{ $group->id }})"
