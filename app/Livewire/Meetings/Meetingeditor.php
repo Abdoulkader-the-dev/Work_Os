@@ -3,14 +3,18 @@
 
 namespace App\Livewire\Meetings;
 
+use App\Events\BoardUpdated;
 use App\Models\Board;
 use App\Models\Group;
 use App\Models\Item;
 use App\Models\Meeting;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 
 class MeetingEditor extends Component
 {
+    use AuthorizesRequests;
     // ── Méta ──────────────────────────────────────────────
     public ?int    $meetingId   = null;
     public string  $title       = '';
@@ -29,6 +33,10 @@ class MeetingEditor extends Component
 
     public function mount(?Meeting $meeting = null): void
     {
+        $meeting?->exists
+            ? $this->authorize('update', $meeting)
+            : $this->authorize('create', Meeting::class);
+
         $this->date = now()->format('Y-m-d');
 
         if ($meeting && $meeting->exists) {
@@ -106,13 +114,17 @@ class MeetingEditor extends Component
     // ── Conversion action → tâche ─────────────────────────
     public function convertActionToTask(int $index): void
     {
+        $this->authorize($this->meetingId ? 'update' : 'create', $this->meetingId ? Meeting::findOrFail($this->meetingId) : Meeting::class);
         $action = $this->actions[$index] ?? null;
         if (!$action || empty(trim($action['text'] ?? ''))) return;
         if ($action['converted'] ?? false) return;
 
-        // Trouver le premier board du workspace courant
-        $board = Board::first(); // adapter selon le contexte workspace
+        $board = Board::query()
+            ->where('workspace_id', auth()->user()?->currentWorkspace?->id)
+            ->first();
         if (!$board) return;
+
+        abort_unless(auth()->user()?->can('update', $board), 403);
 
         $group = $board->groups()->firstOrCreate(
             ['name' => 'Réunions'],
@@ -135,15 +147,37 @@ class MeetingEditor extends Component
 
         $this->saveMeeting();
         $this->dispatch('action-converted', itemId: $item->id, itemName: $item->name);
+        BoardUpdated::dispatch($board->fresh(), 'item.created', ['item_id' => $item->id]);
     }
 
     // ── Sauvegarde ────────────────────────────────────────
     public function saveMeeting(): void
     {
-        $this->validate([
-            'title' => 'required|min:2',
-            'date'  => 'required|date',
-        ]);
+        $rules = [
+            'title' => ['required', 'string', 'min:2', 'max:255'],
+            'date'  => ['required', 'date'],
+            'attendees' => ['array'],
+            'attendees.*' => ['string', 'max:255'],
+            'bilan' => ['array'],
+            'bilan.*' => ['nullable', 'string', 'max:5000'],
+            'recommendations' => ['array'],
+            'recommendations.*' => ['nullable', 'string', 'max:5000'],
+            'actions' => ['array', 'min:1'],
+            'actions.*.text' => ['nullable', 'string', 'max:255'],
+            'actions.*.assignee_id' => ['nullable', 'integer', 'exists:users,id'],
+            'actions.*.deadline' => ['nullable', 'date'],
+            'actions.*.converted' => ['nullable', 'boolean'],
+            'actions.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
+        ];
+
+        Validator::make([
+            'title' => $this->title,
+            'date' => $this->date,
+            'attendees' => $this->attendees,
+            'bilan' => $this->bilan,
+            'recommendations' => $this->recommendations,
+            'actions' => $this->actions,
+        ], $rules)->validate();
 
         $data = [
             'title'           => $this->title,
@@ -156,8 +190,11 @@ class MeetingEditor extends Component
         ];
 
         if ($this->meetingId) {
-            Meeting::findOrFail($this->meetingId)->update($data);
+            $meeting = Meeting::findOrFail($this->meetingId);
+            $this->authorize('update', $meeting);
+            $meeting->update($data);
         } else {
+            $this->authorize('create', Meeting::class);
             $meeting = Meeting::create($data);
             $this->meetingId = $meeting->id;
         }

@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Events\BoardUpdated;
+use App\Http\Requests\BoardStoreRequest;
+use App\Http\Requests\BoardUpdateRequest;
 use App\Http\Controllers\ProfileController;
 use App\Livewire\Boards\BoardTable;
 use App\Livewire\Boards\BoardKanban;
@@ -20,11 +23,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Boards
     Route::get('/boards', fn() => view('pages.boards'))->name('boards.index');
-    Route::post('/boards', function (Request $request) {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'color' => ['nullable', 'string', 'max:20'],
-        ]);
+    Route::post('/boards', function (BoardStoreRequest $request) {
+        $data = $request->validated();
 
         $workspace = $request->user()?->currentWorkspace;
 
@@ -38,10 +38,27 @@ Route::middleware(['auth'])->group(function () {
 
         return redirect()->route('boards.show', $board);
     })->name('boards.store');
-    Route::post('/boards/{board}/groups', function (Request $request, Board $board) {
-        $workspace = $request->user()?->currentWorkspace;
+    Route::patch('/boards/{board}', function (BoardUpdateRequest $request, Board $board) {
+        $data = $request->validated();
 
-        abort_unless($workspace && $board->workspace_id === $workspace->id, 403);
+        $board->update([
+            'name' => trim($data['name']),
+            'color' => $data['color'] ?: $board->color,
+        ]);
+
+        BoardUpdated::dispatch($board->fresh(), 'board.updated', ['board_id' => $board->id]);
+
+        return back()->with('status', 'board-updated');
+    })->name('boards.update');
+    Route::delete('/boards/{board}', function (Request $request, Board $board) {
+        abort_unless($request->user()?->can('delete', $board), 403);
+
+        $board->delete();
+
+        return redirect()->route('boards.index')->with('status', 'board-deleted');
+    })->name('boards.destroy');
+    Route::post('/boards/{board}/groups', function (Request $request, Board $board) {
+        abort_unless($request->user()?->can('update', $board), 403);
 
         $data = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
@@ -54,12 +71,12 @@ Route::middleware(['auth'])->group(function () {
             'order' => ((int) $board->groups()->max('order')) + 1,
         ]);
 
+        BoardUpdated::dispatch($board->fresh(), 'group.created', ['group_id' => $group->id]);
+
         return redirect()->route('boards.show', ['board' => $board])->with('group_created_id', $group->id);
     })->name('boards.groups.store');
     Route::post('/boards/{board}/items', function (Request $request, Board $board) {
-        $workspace = $request->user()?->currentWorkspace;
-
-        abort_unless($workspace && $board->workspace_id === $workspace->id, 403);
+        abort_unless($request->user()?->can('update', $board), 403);
 
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
@@ -67,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
             'status' => ['nullable', 'in:todo,progress,ongoing,blocked,done'],
             'priority' => ['nullable', 'in:basse,moyenne,haute,critique'],
             'deadline' => ['nullable', 'date'],
+            'description' => ['nullable', 'string'],
             'deliverable' => ['nullable', 'string'],
             'redirect_view' => ['nullable', 'in:table,kanban,calendar'],
             'redirect_month' => ['nullable', 'integer', 'between:1,12'],
@@ -132,9 +150,14 @@ Route::middleware(['auth'])->group(function () {
             'status' => $request->input('status', 'todo'),
             'priority' => $request->input('priority', 'moyenne'),
             'deadline' => $request->input('deadline') ?: null,
+            'description' => filled($request->input('description'))
+                ? strip_tags($request->input('description'), '<p><br><strong><em><a><ul><ol><li><blockquote><code>')
+                : null,
             'deliverable' => $request->input('deliverable') ?: null,
             'order' => ((int) $group->items()->max('order')) + 1,
         ]);
+
+        BoardUpdated::dispatch($board->fresh(), 'item.created', ['item_id' => $item->id]);
 
         return redirect()
             ->route($redirectRoute, $redirectParams)

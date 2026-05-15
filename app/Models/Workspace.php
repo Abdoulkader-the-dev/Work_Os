@@ -16,4 +16,13 @@ class Workspace extends Model
     return $this->belongsToMany(User::class, 'workspace_user')->withPivot('role'); 
 }
     public function boards()  { return $this->hasMany(Board::class); }
+
+    public function hasMember(User $user): bool
+    {
+        if ((int) $this->user_id === (int) $user->id) {
+            return true;
+        }
+
+        return $this->members()->whereKey($user->id)->exists();
+    }
 }

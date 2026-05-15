@@ -3,14 +3,19 @@
 
 namespace App\Livewire\Boards;
 
+use App\Events\BoardUpdated;
 use App\Models\Board;
 use App\Models\Group;
 use App\Models\Item;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
 use Livewire\Attributes\On;
 
 class BoardTable extends Component
 {
+    use AuthorizesRequests;
+
     public Board $board;
     public array $openGroups   = [];
     public array $editingGroup = [];
@@ -25,6 +30,7 @@ class BoardTable extends Component
 
     public function mount(Board $board): void
     {
+        $this->authorize('view', $board);
         $this->board = $board;
         $this->openGroups = $board->groups()->orderBy('order')->pluck('id')->all();
         $this->isCreatingGroup = request()->boolean('createGroup') || session()->has('errors');
@@ -66,11 +72,21 @@ class BoardTable extends Component
 
     public function addGroup(): void
     {
+        $this->authorize('update', $this->board);
+
+        $validated = Validator::make([
+            'name' => $this->newGroupName,
+            'color' => $this->newGroupColor,
+        ], [
+            'name' => ['nullable', 'string', 'max:255'],
+            'color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ])->validate();
+
         $name = trim($this->newGroupName) ?: 'Nouveau groupe';
 
         $group = $this->board->groups()->create([
             'name'  => $name,
-            'color' => $this->newGroupColor,
+            'color' => $validated['color'],
             'order' => ((int) $this->board->groups()->max('order')) + 1,
         ]);
 
@@ -79,16 +95,20 @@ class BoardTable extends Component
         }
 
         $this->resetGroupCreationForm();
+        BoardUpdated::dispatch($this->board->fresh(), 'group.created', ['group_id' => $group->id]);
     }
 
     public function deleteGroup(int $groupId): void
     {
-        $group = Group::findOrFail($groupId);
+        $this->authorize('update', $this->board);
+        $group = $this->board->groups()->findOrFail($groupId);
         $group->delete();
         
         $this->openGroups = array_values(array_filter(
             $this->openGroups, fn($id) => $id !== $groupId
         ));
+
+        BoardUpdated::dispatch($this->board->fresh(), 'group.deleted', ['group_id' => $groupId]);
     }
 
     public function startEditingGroup(int $groupId): void
@@ -98,27 +118,44 @@ class BoardTable extends Component
 
     public function saveGroupName(int $groupId, string $newName): void
     {
-        if (empty(trim($newName))) return;
+        $this->authorize('update', $this->board);
+        $validated = Validator::make([
+            'name' => $newName,
+        ], [
+            'name' => ['required', 'string', 'max:255'],
+        ])->validate();
         
-        Group::findOrFail($groupId)->update(['name' => $newName]);
+        $group = $this->board->groups()->findOrFail($groupId);
+        $group->update(['name' => trim($validated['name'])]);
         $this->editingGroup = [];
+        BoardUpdated::dispatch($this->board->fresh(), 'group.updated', ['group_id' => $groupId]);
     }
 
     public function updateGroupColor(int $groupId, string $color): void
     {
-        Group::findOrFail($groupId)->update(['color' => $color]);
+        $this->authorize('update', $this->board);
+        $validated = Validator::make(compact('color'), [
+            'color' => ['required', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+        ])->validate();
+
+        $group = $this->board->groups()->findOrFail($groupId);
+        $group->update(['color' => $validated['color']]);
+        BoardUpdated::dispatch($this->board->fresh(), 'group.updated', ['group_id' => $groupId]);
     }
 
     // ── Items ─────────────────────────────────────────────────
     public function addItem(int $groupId): void
     {
-        if (empty(trim($this->newItemName))) {
-            $this->newItemName = 'Nouvelle tâche';
-        }
+        $this->authorize('update', $this->board);
+        $validated = Validator::make([
+            'name' => trim($this->newItemName) ?: 'Nouvelle tâche',
+        ], [
+            'name' => ['required', 'string', 'max:255'],
+        ])->validate();
 
-        $group = Group::findOrFail($groupId);
+        $group = $this->board->groups()->findOrFail($groupId);
         $item  = $group->items()->create([
-            'name'    => $this->newItemName,
+            'name'    => $validated['name'],
             'status'  => 'todo',
             'priority'=> 'moyenne',
             'order'   => $group->items()->max('order') + 1,
@@ -126,11 +163,15 @@ class BoardTable extends Component
 
         $this->newItemName = '';
         $this->dispatch('item-added', itemId: $item->id);
+        BoardUpdated::dispatch($this->board->fresh(), 'item.created', ['item_id' => $item->id]);
     }
 
     public function deleteItem(int $itemId): void
     {
-        Item::findOrFail($itemId)->delete();
+        $this->authorize('update', $this->board);
+        $item = $this->board->items()->findOrFail($itemId);
+        $item->delete();
+        BoardUpdated::dispatch($this->board->fresh(), 'item.deleted', ['item_id' => $itemId]);
     }
 
     // ── Édition inline ────────────────────────────────────────
@@ -146,32 +187,55 @@ class BoardTable extends Component
 
     public function saveCell(int $itemId, string $field, mixed $value): void
     {
+        $this->authorize('update', $this->board);
         $allowed = ['name', 'deliverable', 'obstacles', 'deadline'];
         if (!in_array($field, $allowed)) return;
 
-        Item::findOrFail($itemId)->update([$field => $value]);
+        Validator::make([$field => $value], [
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'deliverable' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'obstacles' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'deadline' => ['sometimes', 'nullable', 'date'],
+        ])->validate();
+
+        $item = $this->board->items()->findOrFail($itemId);
+        $item->update([$field => $value]);
         $this->editingCell = [];
         $this->dispatch('item-updated');
+        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => $field]);
     }
 
     public function updateStatus(int $itemId, string $status): void
     {
+        $this->authorize('update', $this->board);
         $allowed = ['done', 'progress', 'todo', 'blocked', 'ongoing'];
         if (!in_array($status, $allowed)) return;
-        Item::findOrFail($itemId)->update(['status' => $status]);
+        $item = $this->board->items()->findOrFail($itemId);
+        $item->update(['status' => $status]);
         $this->dispatch('item-updated');
+        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'status']);
     }
 
     public function updatePriority(int $itemId, string $priority): void
     {
+        $this->authorize('update', $this->board);
         $allowed = ['basse', 'moyenne', 'haute', 'critique'];
         if (!in_array($priority, $allowed)) return;
-        Item::findOrFail($itemId)->update(['priority' => $priority]);
+        $item = $this->board->items()->findOrFail($itemId);
+        $item->update(['priority' => $priority]);
+        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'priority']);
     }
 
     public function updateDeadline(int $itemId, string $date): void
     {
-        Item::findOrFail($itemId)->update(['deadline' => $date ?: null]);
+        $this->authorize('update', $this->board);
+        Validator::make(compact('date'), [
+            'date' => ['nullable', 'date'],
+        ])->validate();
+
+        $item = $this->board->items()->findOrFail($itemId);
+        $item->update(['deadline' => $date ?: null]);
+        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'deadline']);
     }
 
     // ── Bulk actions ──────────────────────────────────────────
@@ -189,15 +253,25 @@ class BoardTable extends Component
 
     public function applyBulkAction(): void
     {
+        $this->authorize('update', $this->board);
         if (empty($this->bulkSelected) || empty($this->bulkAction)) return;
 
         [$type, $value] = explode(':', $this->bulkAction);
 
-        Item::whereIn('id', $this->bulkSelected)->update([$type => $value]);
+        Validator::make([
+            'type' => $type,
+            'value' => $value,
+        ], [
+            'type' => ['required', 'in:status,priority'],
+            'value' => ['required', 'string'],
+        ])->validate();
+
+        $this->board->items()->whereIn('id', $this->bulkSelected)->update([$type => $value]);
         $this->bulkSelected = [];
         $this->bulkMode     = false;
         $this->bulkAction   = '';
         $this->dispatch('item-updated');
+        BoardUpdated::dispatch($this->board->fresh(), 'items.bulk-updated', ['field' => $type]);
     }
 
     public function openItemPanel(int $itemId): void
@@ -210,6 +284,13 @@ class BoardTable extends Component
         $this->newGroupName = '';
         $this->newGroupColor = '#0091CD';
         $this->isCreatingGroup = false;
+    }
+
+    protected function getListeners(): array
+    {
+        return [
+            "echo-private:boards.{$this->board->id},BoardUpdated" => '$refresh',
+        ];
     }
 
     public function render()

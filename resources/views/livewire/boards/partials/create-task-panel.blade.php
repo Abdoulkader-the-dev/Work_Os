@@ -113,6 +113,25 @@
                     </select>
                 </label>
 
+                <div style="grid-column:1 / span 5;" wire:ignore>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <span style="font-size:12px;font-weight:600;color:var(--text-2);">Description</span>
+                        <div x-data
+                             x-init="
+                                const input = $refs.input;
+                                const editor = $refs.editor;
+                                editor.editor?.loadHTML(input.value || '');
+                                editor.addEventListener('trix-change', () => { input.value = editor.value; });
+                             ">
+                            <input id="create-task-description-{{ $viewName }}-{{ $board->id }}" type="hidden" name="description" x-ref="input" value="{{ old('description') }}">
+                            <trix-editor input="create-task-description-{{ $viewName }}-{{ $board->id }}"
+                                         x-ref="editor"
+                                         class="trix-content"
+                                         style="background:var(--bg);border:1px solid var(--border);border-radius:10px;min-height:140px;padding:10px 12px;"></trix-editor>
+                        </div>
+                    </div>
+                </div>
+
                 <div style="grid-column:4 / span 2;font-size:11px;color:var(--text-3);display:flex;align-items:center;justify-content:flex-end;">
                     La tâche sera disponible immédiatement dans Tableau, Kanban et Calendrier.
                 </div>

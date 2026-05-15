@@ -34,4 +34,39 @@ class User extends Authenticatable
     public function getCurrentWorkspaceAttribute() {
         return $this->workspaces()->first();
     }
+
+    public function workspaceRole(?Workspace $workspace): ?string
+    {
+        if (!$workspace) {
+            return null;
+        }
+
+        if ((int) $workspace->user_id === (int) $this->id) {
+            return 'admin';
+        }
+
+        return $this->workspaces()
+            ->whereKey($workspace->id)
+            ->first()?->pivot?->role;
+    }
+
+    public function belongsToWorkspace(?Workspace $workspace): bool
+    {
+        return !is_null($this->workspaceRole($workspace));
+    }
+
+    public function canViewWorkspace(?Workspace $workspace): bool
+    {
+        return $this->belongsToWorkspace($workspace);
+    }
+
+    public function canManageWorkspace(?Workspace $workspace): bool
+    {
+        return in_array($this->workspaceRole($workspace), ['admin', 'member'], true);
+    }
+
+    public function canManageBoard(?Board $board): bool
+    {
+        return $board ? $this->canManageWorkspace($board->workspace) : false;
+    }
 }

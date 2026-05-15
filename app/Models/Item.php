@@ -11,7 +11,7 @@ class Item extends Model
 
     protected $fillable = [
         'name', 'status', 'priority',
-        'deadline', 'deliverable', 'obstacles',
+        'deadline', 'description', 'deliverable', 'obstacles',
         'order', 'group_id'
     ];
 

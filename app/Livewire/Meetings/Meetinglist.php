@@ -4,11 +4,13 @@
 namespace App\Livewire\Meetings;
 
 use App\Models\Meeting;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class MeetingList extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public string $search    = '';
@@ -28,12 +30,16 @@ class MeetingList extends Component
 
     public function deleteMeeting(int $id): void
     {
-        Meeting::findOrFail($id)->delete();
+        $meeting = Meeting::findOrFail($id);
+        $this->authorize('delete', $meeting);
+        $meeting->delete();
     }
 
     public function render()
     {
+        $this->authorize('viewAny', Meeting::class);
         $meetings = Meeting::query()
+            ->where('user_id', auth()->id())
             ->where(function ($q) {
                 $q->where('title', 'like', "%{$this->search}%")
                   ->orWhere('attendees', 'like', "%{$this->search}%");

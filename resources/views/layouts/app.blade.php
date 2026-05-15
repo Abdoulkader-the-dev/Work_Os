@@ -35,6 +35,7 @@
         }
 
         *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        [x-cloak] { display:none !important; }
         html { font-size:15px; -webkit-font-smoothing:antialiased; }
         body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text-1); display:flex; height:100vh; overflow:hidden; }
 

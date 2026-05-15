@@ -6,6 +6,7 @@
     {{-- Overlay --}}
     <div x-cloak
          x-show="$wire.isOpen"
+         x-transition.opacity.duration.180ms
          style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);pointer-events:auto;"
          wire:click="closePanel()">
     </div>
@@ -13,6 +14,7 @@
     {{-- Panel --}}
     <div x-cloak
          x-show="$wire.isOpen"
+         x-transition.opacity.duration.180ms
          style="position:absolute;right:0;top:0;height:100%;width:520px;background:white;border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:-16px 0 48px rgba(0,0,0,0.08);pointer-events:auto;">
 
         @if($item)
@@ -191,6 +193,28 @@
                         </div>
                     </div>
 
+                    {{-- Description --}}
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Description</span>
+                        <div style="flex:1;" wire:key="item-description-{{ $item->id }}">
+                            <div wire:ignore
+                                 x-data
+                                 x-init="
+                                    const input = $refs.input;
+                                    const editor = $refs.editor;
+                                    editor.editor?.loadHTML(input.value || '');
+                                    editor.addEventListener('trix-change', () => { input.value = editor.value; });
+                                    editor.addEventListener('trix-blur', () => { $wire.saveField('description', input.value); });
+                                 ">
+                                <input id="item-description-input-{{ $item->id }}" type="hidden" x-ref="input" value="{{ $item->description ?? '' }}">
+                                <trix-editor input="item-description-input-{{ $item->id }}"
+                                             x-ref="editor"
+                                             class="trix-content"
+                                             style="background:var(--bg);border:1px solid var(--border);border-radius:10px;min-height:160px;padding:10px 12px;"></trix-editor>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Livrable --}}
                     <div style="{{ $row }}">
                         <span style="{{ $label }}">Livrable</span>
@@ -235,7 +259,7 @@
                                     <span style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
                                 <div style="background:var(--bg);border-radius:12px;border-top-left-radius:4px;padding:10px 14px;font-size:13px;line-height:1.5;">
-                                    {!! nl2br(e(preg_replace('/@(\w+)/', '<span style="color:var(--blue);font-weight:500;">@$1</span>', $comment->body))) !!}
+                                    {!! $comment->body !!}
                                 </div>
                             </div>
                         </div>
@@ -265,13 +289,27 @@
                     <div style="width:32px;height:32px;border-radius:50%;background:var(--text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
                         {{ strtoupper(substr(auth()->user()?->name ?? 'U', 0, 2)) }}
                     </div>
-                    <textarea wire:model="newComment"
-                              placeholder="Écrire un commentaire... (@mention)"
-                              rows="2"
-                              style="flex:1;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:10px;padding:8px 12px;resize:none;outline:none;transition:border-color .15s;"
-                              onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
-                              wire:keydown.ctrl.enter="addComment()">
-                    </textarea>
+                    <div style="flex:1;" wire:key="item-comment-editor-{{ $item->id }}">
+                        <div wire:ignore
+                             x-data
+                             x-init="
+                                const input = $refs.input;
+                                const editor = $refs.editor;
+                                editor.editor?.loadHTML(input.value || '');
+                                editor.addEventListener('trix-change', () => { input.value = editor.value; $wire.set('newComment', input.value); });
+                                window.addEventListener('trix-clear-comment', () => {
+                                    input.value = '';
+                                    editor.editor?.loadHTML('');
+                                });
+                             ">
+                            <input id="new-comment-input-{{ $item->id }}" type="hidden" x-ref="input" value="">
+                            <trix-editor input="new-comment-input-{{ $item->id }}"
+                                         x-ref="editor"
+                                         class="trix-content"
+                                         placeholder="Écrire un commentaire..."
+                                         style="border:1px solid var(--border);border-radius:10px;min-height:110px;background:white;padding:8px 10px;"></trix-editor>
+                        </div>
+                    </div>
                     <button wire:click="addComment()"
                             style="width:36px;height:36px;background:var(--text-1);border:none;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .15s;"
                             onmouseover="this.style.background='#2a2a28'" onmouseout="this.style.background='var(--text-1)'">
@@ -280,7 +318,7 @@
                         </svg>
                     </button>
                 </div>
-                <p style="font-size:11px;color:var(--text-3);margin-top:6px;margin-left:42px;">Ctrl+Entrée pour envoyer</p>
+                <p style="font-size:11px;color:var(--text-3);margin-top:6px;margin-left:42px;">Le commentaire prend en charge le texte riche via Trix.</p>
             </div>
         @endif
 

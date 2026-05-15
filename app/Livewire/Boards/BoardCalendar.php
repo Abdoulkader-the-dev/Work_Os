@@ -6,16 +6,20 @@ namespace App\Livewire\Boards;
 use App\Models\Board;
 use App\Models\Item;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Component;
 
 class BoardCalendar extends Component
 {
+    use AuthorizesRequests;
+
     public Board $board;
     public int   $year;
     public int   $month;
 
     public function mount(Board $board): void
     {
+        $this->authorize('view', $board);
         $this->board = $board;
         $this->year  = (int) request()->integer('year', now()->year);
         $this->month = (int) request()->integer('month', now()->month);
@@ -44,6 +48,13 @@ class BoardCalendar extends Component
     public function openItemPanel(int $itemId): void
     {
         $this->dispatch('open-item-panel', itemId: $itemId);
+    }
+
+    protected function getListeners(): array
+    {
+        return [
+            "echo-private:boards.{$this->board->id},BoardUpdated" => '$refresh',
+        ];
     }
 
     public function render()

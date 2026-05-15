@@ -2,108 +2,118 @@
 
 > **⚠️ AVERTISSEMENT : Ce projet est actuellement en cours de développement et n'est pas encore terminé.**
 
-UniPod-To-Do-List est une application de gestion de tâches et de projets conçue pour offrir une interface moderne, réactive et fluide. Elle permet la création d'espaces de travail (Workspaces), de tableaux (Boards) sous différentes vues (Tableau, Kanban, Calendrier), de groupes de tâches, et de planifier des réunions.
-
-Ce document est un aperçu exhaustif de l'état actuel du projet : ce qui a été fait, comment le tester/modifier, et ce qu'il reste à accomplir.
+UniPod-To-Do-List est une application de gestion de tâches et de projets conçue pour offrir une interface moderne, réactive et fluide.
 
 ---
 
-## 🛠️ Stack Technique
+## 📊 État Global
 
-- **Backend :** Laravel 11 (PHP 8.3+)
-- **Frontend :** Livewire 3, Alpine.js, Tailwind CSS (via Vite)
-- **Base de données :** SQLite (par défaut)
-- **Authentification :** Laravel Breeze (Session)
+Le projet a déjà une base fonctionnelle solide sur les 3 couches: frontend, backend et base de données. Les boards, tâches, groupes, meetings, notifications et vues principales existent, avec une bonne partie du flux produit déjà branchée. Le travail récent a surtout consolidé la cohérence entre les vues, sécurisé le backend, et rendu plusieurs écrans réellement dynamiques.
 
 ---
 
-## ✅ Ce qui a été accompli (État Actuel)
+## ✅ Ce qui a été fait
 
-### 🎨 Frontend (Vues & Composants)
-- **Intégration du Template & Styles :** Mise en place d'une structure de base avec des composants réutilisables grâce à Laravel Blade et Tailwind CSS. Améliorations récentes des layouts globaux (`app`, `guest`, `navigation`).
-- **Authentification personnalisée :** Les vues de connexion et d'inscription générées par Laravel Breeze ont été personnalisées pour correspondre au design moderne de l'application.
-- **Routes & Pages (Vues Statiques / Dynamiques) :**
-  - Tableau de bord (`/dashboard`)
-  - Gestion des Tableaux (`/boards`) avec 3 vues initialisées (Livewire) : `BoardTable`, `BoardKanban`, `BoardCalendar`.
-  - Gestion des Réunions (`/meetings`) avec création (`meeting-create`), liste (`MeetingList`), détails (`meeting-show`) et édition (`meeting-edit`).
-  - Autres pages préparées (Blade) : Mes Tâches (`my-tasks`), Calendrier global (`calendar`), Rapports (`reports`), Membres (`members`), et Paramètres (`settings`).
-- **Composants Livewire (Logique UI) :**
-  - Le système de notifications (`Partials/Notifications`) a été enrichi avec une logique backend propre et une vue dédiée pour afficher des alertes interactives (marquer comme lu).
-  - Autres composants pour la réactivité : `Items/ItemPanel`, gestion des boards (comme `BoardTable`).
-- **Profil Utilisateur :** Ajout des pages de gestion de profil (édition, mise à jour, suppression) gérées avec les routes Laravel de base.
+### 🎨 Frontend
 
-### ⚙️ Backend (Architecture & Logique)
-- **Configuration Laravel :** Installation propre de Laravel 11.
-- **Authentification & Sécurité :** Système d'authentification Breeze fonctionnel. Les routes principales sont protégées par le middleware `auth`.
-- **Routage & Contrôleurs (CRUD) :** 
-  - Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées.
-  - **Création implémentée :** Les routes pour la création de Tableaux (`Boards`), de Groupes (`Groups`), et de Tâches (`Items`) avec validation des données et redirections dynamiques sont opérationnelles.
-  - **Notifications :** Routes pour marquer les notifications comme lues (individuellement ou toutes).
-- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend.
+- **Vues boards opérationnelles :**
+    - Tableau, Kanban, Calendrier board sont branchés aux vraies données.
+    - Ajout de tâche unifié entre les 3 vues.
+    - Ajout de groupe fonctionnel.
+    - Panneau latéral de tâche fonctionnel.
+- **Dashboard et onglets principaux dynamisés :**
+    - Dashboard
+    - Calendrier
+    - Rapports
+    - Membres
+    - Notifications
+    - Paramètres
+- **UI/UX :**
+    - Transitions Alpine sur le panneau tâche.
+    - Transitions sur le dropdown notifications.
+    - Animation du modal de création board.
+    - Gestion `x-cloak` pour éviter les flashes.
+- **Texte riche :**
+    - Trix intégré pour la description des tâches.
+    - Trix intégré pour les commentaires.
+    - Trix intégré dans le formulaire de création de tâche.
+- **Gestion board côté UI :**
+    - Création, modification, suppression.
+    - Contrôle d’affichage selon permissions.
 
-### 🗄️ Base de Données (Modèles & Migrations)
-L'architecture de la base de données relationnelle a été pensée et traduite en migrations Laravel (`database/migrations`) et Modèles Eloquent (`app/Models`) :
-- `User` : Utilisateurs du système (Authentification).
-- `Workspace` : Espaces de travail regroupant plusieurs tableaux.
-- `Board` : Tableaux de bord de tâches.
-- `Group` : Groupes ou colonnes de tâches (ex: "À faire", "En cours" pour le Kanban).
-- `Item` : Les tâches individuelles.
-- `Comment` : Commentaires liés aux tâches.
-- `Meeting` : Planification de réunions (Titre, horaires, description).
-- `Notification` : Système de notifications pour les utilisateurs.
+### ⚙️ Backend
 
----
+- **CRUD partiellement finalisé :**
+    - Board : create, read, update, delete disponibles.
+    - Group : create, update partiel, delete.
+    - Item : create, update, delete, bulk update, move en kanban.
+    - Meeting : create, read, update, delete via Livewire.
+- **Validation :**
+    - `BoardStoreRequest`
+    - `BoardUpdateRequest`
+    - Validations renforcées dans plusieurs composants Livewire : `BoardTable`, `BoardKanban`, `BoardCalendar`.
+- **Temps réel :**
+    - Temps réel branché sur les vues board via Echo.
+    - Notifications instantanées minimales sur assignation / mention.
 
-## 🔍 Comment vérifier et modifier le projet
+### 🗄️ Base de données
 
-### Prérequis
-- PHP 8.3+
-- Composer
-- Node.js & NPM
-- SQLite (ou tout autre SGBD si vous modifiez le `.env`)
-
-### Installation & Lancement
-1. Clonez le dépôt.
-2. Installez les dépendances PHP : `composer install`
-3. Installez les dépendances JS : `npm install`
-4. Créez votre fichier d'environnement : `cp .env.example .env`
-5. Générez la clé de l'application : `php artisan key:generate`
-6. Créez la base de données SQLite (si non existante) et lancez les migrations :
-   ```bash
-   touch database/database.sqlite
-   php artisan migrate
-   ```
-7. Démarrez les serveurs de développement simultanément :
-   ```bash
-   npm run dev
-   php artisan serve
-   ```
-   *(Note : Assurez-vous d'utiliser `php artisan serve` pour un routage correct avec Laravel, plutôt que `php -S`)*
-8. Accédez à l'application via `http://localhost:8000`.
-
-### Modification de l'application
-- **Pour le Design & l'UI :** Modifiez les fichiers `.blade.php` dans `resources/views/`. Les classes Tailwind s'appliqueront automatiquement grâce à `npm run dev` (Vite).
-- **Pour les interactions réactives :** Modifiez les fichiers PHP dans `app/Livewire/` et leurs vues associées dans `resources/views/livewire/`.
-- **Pour la Base de données :** Créez de nouvelles migrations (`php artisan make:migration`), modifiez celles dans `database/migrations/`, et n'oubliez pas d'actualiser avec `php artisan migrate:fresh`. Ajoutez vos relations dans les modèles correspondants situés dans `app/Models/`.
+- **Schéma principal déjà présent :**
+    - `users`, `workspaces`, `workspace_user`, `boards`, `groups`, `items`, `item_user`, `comments`, `meetings`, `notifications`.
+- **Évolution récente :**
+    - Ajout de description sur les items.
+- **Seed cohérent :**
+    - `users`, `workspace`, rôles, `boards`, `groupes`, `tâches`, `meetings`. (Seeders plus avancés à faire).
+- **Search globale topbar :**
+    - Actuellement vraie recherche transverse.
+- **Notifications :**
+    - Meilleure granularité visuelle (redirection vers vues lourdes en inline styles qui méritent une harmonisation CSS).
+    - Certains dropdowns utilisent encore plusieurs patterns différents.
 
 ---
 
 ## 📝 Ce qu'il reste à faire (To-Do List du Projet)
 
-Bien que la structure de base soit présente, plusieurs fonctionnalités clés doivent encore être implémentées pour rendre l'application pleinement fonctionnelle :
+### ⚙️ Backend
 
-### 🎨 Frontend (À faire)
-- [ ] **Kanban Drag & Drop :** Rendre la vue `BoardKanban` pleinement interactive avec SortableJS (déjà présent dans `package.json`).
-- [ ] **Dynamisation des vues statiques :** Connecter les pages `Mes Tâches`, `Calendrier`, `Rapports`, et `Membres` aux vraies données Livewire/Eloquent.
-- [ ] **UI/UX Polishing :** Ajouter des transitions Alpine.js pour les modales, les menus déroulants (notamment pour les nouvelles notifications).
-- [ ] **Éditeur de texte riche :** Intégrer Trix (déjà configuré) pour les descriptions de tâches et les commentaires.
+- **CRUD encore à finaliser complètement pour toutes les entités :**
+    - **Board :** Manque probablement des tests dédiés d’update/delete.
+    - **Group :** Pas encore de Form Request dédiée, pas encore de routes REST complètes.
+    - **Item :** Pas encore de Form Request dédiée, logique encore répartie entre route closure + Livewire.
+    - **Meeting :** Validation encore inline dans Livewire, pas externalisée.
+- **Validation avancée :**
+    - Créer des objets dédiés pour : `GroupStore/UpdateRequest`, `ItemStore/UpdateRequest`, `MeetingStore/UpdateRequest`.
+    - Centraliser certaines regex/règles métier.
+- **Autorisations :**
+    - Rôle reader prévu conceptuellement, mais pas encore complètement déroulé dans seed + UI + tests.
+    - Pas encore de policy explicite pour `Item`, `Group`, `Comment`, `Notification`.
+- **Temps réel :**
+    - Le code est prêt, mais l’environnement tourne encore sur broadcasting = log.
+    - Il faut activer réellement : soit Laravel Reverb, soit Pusher.
+    - Il faut ensuite tester le flux temps réel en conditions réelles.
+- **Architecture :**
+    - Plusieurs routes utilisent encore des closures.
+    - Une partie de la logique métier gagnerait à être déplacée vers : controllers, actions/services, form requests, notifications Laravel natives.
+- **Tests :**
+    - Pas encore de couverture solide sur : policies, rôles admin/member/reader, update/delete boards/groups/items/meetings, broadcasting / notifications temps réel.
 
-### ⚙️ Backend (À faire)
-- [ ] **Finalisation du CRUD :** Terminer la lecture, la modification et la suppression (Update, Delete) pour toutes les entités (Boards, Groups, Items, Meetings).
-- [ ] **Validation avancée :** S'assurer que toutes les entrées utilisateurs (Livewire forms) sont strictement validées (Form Requests / Livewire Rules) au-delà de la création simple.
-- [ ] **Gestion des rôles et autorisations :** Implémenter des Policies Laravel pour restreindre l'accès aux Workspaces et Boards selon le rôle de l'utilisateur (Admin, Membre, Lecteur).
-- [ ] **Temps réel (WebSockets) :** Configurer Laravel Echo avec Pusher ou Laravel Reverb pour la mise à jour en temps réel des boards et l'envoi de notifications instantanées.
+### 🗄️ Base de données
 
-### 🗄️ Base de Données (À faire)
-- [ ] **Seeders & Factories :** Créer des données factices (Faker) pour remplir la base de données rapidement et faciliter les tests de l'interface (ex: générer 50 tâches, 5 boards, etc.).
-- [ ] **Optimisation des requêtes :** Prévenir les problèmes "N+1 queries" en utilisant l'Eager Loading (`with()`) dans les contrôleurs Livewire lors de l'affichage des relations (ex: Charger un Board avec ses Groupes et Items).
+- **À améliorer :**
+    - Ajouter éventuellement des contraintes plus strictes sur certains champs métier.
+    - Vérifier les index utiles si la volumétrie augmente.
+    - Potentiellement normaliser davantage certaines structures JSON de meetings si besoin d’analytics avancée.
+- **Temps réel / notifications :**
+    - Si montée en charge, il faudra penser aux files (queues), aux workers, et à la persistance associée.
+
+---
+
+## 🚀 Recommandation de suite
+
+L’ordre le plus logique maintenant est :
+
+1. Ajouter les tests d’autorisation admin / member / reader.
+2. Créer les Form Requests pour Group, Item, Meeting.
+3. Sortir la logique métier des closures/routes vers des controllers ou services.
+4. Activer réellement Reverb ou Pusher.
+5. Finir le polish UI restant.
