@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="4vGzGLnlXaJLpk1n9vkFkIQNoewIQDkPuhmDBbhF">
+    <title>UniPod — Work OS</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <script type="module" src="http://[::1]:5173/@vite/client" data-navigate-track="reload"></script><link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css" data-navigate-track="reload" /><script type="module" src="http://[::1]:5173/resources/js/app.js" data-navigate-track="reload"></script>    <!-- Livewire Styles --><style >[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.list-item][wire\:loading\.list-item], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak] {display: none !important;}[wire\:cloak] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}</style>
+
+    <style>
+        :root {
+            --blue:        #0091CD;
+            --blue-light:  #e6f5fb;
+            --yellow:      #FFD100;
+            --yellow-light:#fff8d6;
+            --bg:          #f5f5f3;
+            --surface:     #ffffff;
+            --border:      rgba(0,0,0,0.07);
+            --border-md:   rgba(0,0,0,0.14);
+            --text-1:      #111110;
+            --text-2:      #6b6b68;
+            --text-3:      #a3a39f;
+            --sidebar-w:   220px;
+            --topbar-h:    60px;
+            --radius-card: 14px;
+            --radius-btn:  8px;
+            --ease-bounce: cubic-bezier(0.34,1.56,0.64,1);
+            --ease-out:    cubic-bezier(0.4,0,0.2,1);
+        }
+
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        html { font-size:15px; -webkit-font-smoothing:antialiased; }
+        body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text-1); display:flex; height:100vh; overflow:hidden; }
+
+        .bento-card {
+            background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
+            transition: transform 0.22s var(--ease-bounce), box-shadow 0.22s var(--ease-out), border-color 0.18s var(--ease-out);
+        }
+        .bento-card:hover { transform:translateY(-4px) scale(1.01); box-shadow:0 16px 40px rgba(0,0,0,0.09),0 4px 12px rgba(0,0,0,0.05); border-color:var(--border-md); }
+        .bento-card:active { transform:translateY(-1px) scale(1.005); }
+
+        .s-done     { background:#dcfce7; color:#16a34a; }
+        .s-progress { background:var(--blue-light); color:var(--blue); }
+        .s-todo     { background:#f4f4f3; color:var(--text-2); }
+        .s-blocked  { background:#fee2e2; color:#dc2626; }
+        .s-ongoing  { background:#fff4e5; color:#ea580c; }
+
+        #sidebar {
+            width:var(--sidebar-w); min-width:var(--sidebar-w);
+            background:var(--surface); border-right:1px solid var(--border);
+            display:flex; flex-direction:column; height:100vh;
+            position:relative; z-index:30;
+            transition:transform 0.25s var(--ease-out);
+        }
+
+        #topbar {
+            height:var(--topbar-h); min-height:var(--topbar-h);
+            background:var(--surface); border-bottom:1px solid var(--border);
+            display:flex; align-items:center; gap:14px; padding:0 28px;
+            position:relative; z-index:50; overflow:visible; flex-shrink:0;
+        }
+
+        #content { flex:1; overflow-y:auto; padding:28px; }
+
+        #sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:29; }
+
+        @media (max-width:768px) {
+            #sidebar { position:fixed; left:0; top:0; bottom:0; transform:translateX(-100%); }
+            #sidebar.open { transform:translateX(0); box-shadow:8px 0 32px rgba(0,0,0,0.12); }
+            #sidebar-overlay.open { display:block; }
+            #content { padding:20px 16px; }
+        }
+
+        .nav-item {
+            display:flex; align-items:center; gap:10px; padding:7px 10px;
+            border-radius:var(--radius-btn); font-size:14px; color:var(--text-2);
+            cursor:pointer; text-decoration:none; transition:background .15s,color .15s;
+        }
+        .nav-item:hover  { background:var(--bg); color:var(--text-1); }
+        .nav-item.active { background:var(--text-1); color:#fff; font-weight:500; }
+        .nav-item.active svg { filter:invert(1); }
+        .nav-item.active .nav-badge { background:rgba(255,255,255,0.2); color:#fff; }
+
+        .nav-badge {
+            margin-left:auto; background:var(--yellow); color:var(--text-1);
+            font-size:10px; font-weight:600; font-family:'DM Mono',monospace;
+            padding:1px 6px; border-radius:20px; line-height:1.6;
+        }
+
+        .nav-section-label {
+            font-size:10px; font-weight:500; letter-spacing:.08em; text-transform:uppercase;
+            color:var(--text-3); padding:0 10px; margin:16px 0 5px;
+        }
+
+        .view-switcher { display:flex; gap:2px; background:var(--bg); border-radius:var(--radius-btn); padding:3px; }
+        .view-btn {
+            padding:5px 13px; border-radius:6px; font-size:12px; font-weight:500;
+            color:var(--text-2); cursor:pointer; border:none; background:none;
+            font-family:'DM Sans',sans-serif; transition:all .15s; text-decoration:none;
+        }
+        .view-btn.active { background:var(--surface); color:var(--text-1); box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+        .view-btn:hover:not(.active) { color:var(--text-1); }
+
+        .search-box {
+            display:flex; align-items:center; gap:8px; background:var(--bg);
+            border:1px solid var(--border); border-radius:var(--radius-btn);
+            padding:7px 12px; font-size:13px; color:var(--text-3); width:200px;
+            transition:border-color .15s,width .25s var(--ease-out);
+        }
+        .search-box:focus-within { border-color:var(--blue); width:260px; }
+        .search-box input { background:none; border:none; outline:none; font-size:13px; font-family:'DM Sans',sans-serif; color:var(--text-1); width:100%; }
+        .search-box input::placeholder { color:var(--text-3); }
+
+        .icon-btn {
+            width:36px; height:36px; border-radius:var(--radius-btn);
+            background:var(--bg); border:1px solid var(--border);
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; transition:background .15s,border-color .15s;
+            position:relative; color:var(--text-2);
+        }
+        .icon-btn:hover { background:#e8e8e6; border-color:var(--border-md); }
+
+        .user-avatar {
+            width:36px; height:36px; border-radius:50%;
+            background:var(--text-1); color:#fff; font-size:12px; font-weight:600;
+            display:flex; align-items:center; justify-content:center;
+            cursor:pointer; letter-spacing:.03em;
+            border:2px solid transparent; transition:border-color .15s;
+        }
+        .user-avatar:hover { border-color:var(--border-md); }
+
+        .btn-primary {
+            display:inline-flex; align-items:center; gap:6px; padding:8px 16px;
+            background:var(--text-1); color:#fff; border:none;
+            border-radius:var(--radius-btn); font-size:13px; font-weight:500;
+            font-family:'DM Sans',sans-serif; cursor:pointer; text-decoration:none;
+            transition:background .15s,transform .15s;
+        }
+        .btn-primary:hover { background:#2a2a28; transform:translateY(-1px); }
+        .btn-primary:active { transform:translateY(0); }
+
+        .workspace-selector {
+            display:flex; align-items:center; gap:8px; padding:8px 10px;
+            background:var(--bg); border-radius:var(--radius-btn);
+            cursor:pointer; transition:background .15s;
+        }
+        .workspace-selector:hover { background:#e8e8e6; }
+
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.12); border-radius:10px; }
+        ::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.22); }
+    </style>
+</head>
+
+<body
+    x-data="{
+        mobileSidebarOpen: false,
+        toggleMobileSidebar() {
+            this.mobileSidebarOpen = !this.mobileSidebarOpen;
+            document.getElementById('sidebar').classList.toggle('open', this.mobileSidebarOpen);
+            document.getElementById('sidebar-overlay').classList.toggle('open', this.mobileSidebarOpen);
+        },
+        closeMobileSidebar() {
+            this.mobileSidebarOpen = false;
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        }
+    }"
+    @keydown.escape.window="closeMobileSidebar()">
+
+    
+    <aside id="sidebar" :class="{ 'open': mobileSidebarOpen }">
+
+        <div style="padding:22px 20px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;background:var(--text-1);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="1" width="6" height="6" rx="1.5" fill="white"/>
+                    <rect x="9" y="1" width="6" height="6" rx="1.5" fill="white" opacity=".6"/>
+                    <rect x="1" y="9" width="6" height="6" rx="1.5" fill="white" opacity=".6"/>
+                    <rect x="9" y="9" width="6" height="6" rx="1.5" fill="white" opacity=".3"/>
+                </svg>
+            </div>
+            <span style="font-size:17px;font-weight:600;letter-spacing:-0.02em;">
+                Uni<span style="color:var(--yellow);">Pod</span>
+            </span>
+        </div>
+
+        <nav style="flex:1;padding:14px 12px;overflow-y:auto;">
+
+            <div class="nav-section-label">Principal</div>
+
+            <a href="http://127.0.0.1:8000/dashboard" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <rect x="1" y="1" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
+                    <rect x="8.5" y="1" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
+                    <rect x="1" y="8.5" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
+                    <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
+                </svg>
+                Dashboard
+            </a>
+
+            <a href="http://127.0.0.1:8000/boards" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <rect x="1" y="1" width="14" height="3" rx="1" fill="currentColor"/>
+                    <rect x="1" y="6.5" width="14" height="3" rx="1" fill="currentColor"/>
+                    <rect x="1" y="12" width="9" height="3" rx="1" fill="currentColor"/>
+                </svg>
+                Boards
+            </a>
+
+            <a href="http://127.0.0.1:8000/meetings" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M1 6h14" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Réunions
+            </a>
+
+            <div class="nav-section-label">Personnel</div>
+
+            <a href="http://127.0.0.1:8000/my-tasks" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Mes tâches
+                                                    <span class="nav-badge">4</span>
+                            </a>
+
+            <a href="http://127.0.0.1:8000/calendar" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M1 6h14M5 1v2M11 1v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <rect x="4" y="8.5" width="2" height="2" rx=".5" fill="currentColor"/>
+                    <rect x="7" y="8.5" width="2" height="2" rx=".5" fill="currentColor"/>
+                    <rect x="10" y="8.5" width="2" height="2" rx=".5" fill="currentColor"/>
+                </svg>
+                Calendrier
+            </a>
+
+            <a href="http://127.0.0.1:8000/reports" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <path d="M2 12L5.5 8l3 3L12 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M1 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Rapports
+            </a>
+
+            <div class="nav-section-label">Système</div>
+
+            <a href="http://127.0.0.1:8000/members" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M11 7c1.66 0 3 1.34 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Membres
+            </a>
+
+            <a href="http://127.0.0.1:8000/settings" class="nav-item ">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M2.93 2.93l1.06 1.06M12.01 12.01l1.06 1.06M2.93 13.07l1.06-1.06M12.01 3.99l1.06-1.06" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Paramètres
+            </a>
+
+        </nav>
+
+        <div x-data="{ open: false }" style="padding:12px;border-top:1px solid var(--border);position:relative;">
+            <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:0 2px;margin-bottom:6px;">Workspace</div>
+            <div class="workspace-selector" @click="open = !open" @click.outside="open = false">
+                <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;"></div>
+                <span style="font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    UniPod HQ
+                </span>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;" :style="open ? 'transform:rotate(180deg)' : ''">
+                    <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            
+            <div x-cloak
+                 x-show="open"
+                  style="display:none;position:absolute;bottom:68px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-btn);box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;z-index:50;">
+                                    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s;"
+                         onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#0091CD;"></div>
+                        UniPod HQ
+                    </div>
+                            </div>
+        </div>
+
+    </aside>
+
+    <div id="sidebar-overlay" :class="{ 'open': mobileSidebarOpen }" @click="closeMobileSidebar()"></div>
+
+    
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+
+        <header id="topbar">
+
+            <button class="icon-btn" style="display:none;" id="burger-btn" @click="toggleMobileSidebar()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+
+            <h1 style="font-size:18px;font-weight:600;letter-spacing:-0.02em;white-space:nowrap;">
+                Dashboard            </h1>
+
+            
+            <div style="flex:1;"></div>
+
+            
+            <div class="search-box" role="search">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--text-3);">
+                    <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <input type="text" placeholder="Rechercher...">
+            </div>
+
+            
+            <div wire:key="lw-2269648671-0" wire:snapshot="{&quot;data&quot;:{&quot;isOpen&quot;:false,&quot;unreadCount&quot;:3},&quot;memo&quot;:{&quot;id&quot;:&quot;jnj0oXYVC6vKc4PNuvsj&quot;,&quot;name&quot;:&quot;partials.notifications&quot;,&quot;path&quot;:&quot;\/&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;en&quot;,&quot;islands&quot;:[]},&quot;checksum&quot;:&quot;bb38a8c58ba62c174494898a8fadd84ad8ded9c7dcddf8c136b42b7012bb48d3&quot;}" wire:effects="{&quot;listeners&quot;:[&quot;echo-private:users.1,NotificationSent&quot;]}" wire:id="jnj0oXYVC6vKc4PNuvsj" wire:name="partials.notifications" x-data="{ open: false }" style="position:relative;z-index:70;">
+
+    
+    <button @click="open = !open"
+            style="width:36px;height:36px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;color:var(--text-2);transition:all .15s;"
+            onmouseover="this.style.background='#e8e8e6';this.style.borderColor='var(--border-md)'"
+            onmouseout="this.style.background='var(--bg)';this.style.borderColor='var(--border)'"
+            :aria-expanded="open"
+            aria-label="Notifications">
+
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M8 1.5a5 5 0 00-5 5v3l-1.5 2h13L13 9.5v-3a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            <path d="M6.5 13.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+
+        
+        <!--[if BLOCK]><![endif]-->            <div style="position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--yellow);border-radius:50%;border:1.5px solid white;"></div>
+        <!--[if ENDBLOCK]><![endif]-->    </button>
+
+    
+    <div x-show="open"
+         x-cloak
+         @click.outside="open = false"
+         @keydown.escape.window="open = false"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 translateY-[-4px]"
+         x-transition:enter-end="opacity-100 translateY-0"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         style="position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;">
+
+        
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Notifications</span>
+                <!--[if BLOCK]><![endif]-->                    <span style="font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:20px;background:var(--yellow);color:var(--text-1);">
+                        3
+                    </span>
+                <!--[if ENDBLOCK]><![endif]-->            </div>
+            <!--[if BLOCK]><![endif]-->                <button wire:click="markAllAsRead"
+                        style="font-size:11px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">
+                    Tout marquer lu
+                </button>
+            <!--[if ENDBLOCK]><![endif]-->        </div>
+
+        
+        <div style="max-height:400px;overflow-y:auto;">
+            <!--[if BLOCK]><![endif]-->                
+                <div wire:click="markAsRead(1)"
+                     style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:rgba(0,145,205,0.03);"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='rgba(0,145,205,0.03)'">
+
+                    <div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px;"></div>
+
+                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:#0091CD22;color:#0091CD;">
+                        @
+                    </div>
+
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;color:var(--text-1);line-height:1.4;">
+                            <strong>Mohamed</strong> vous a mentionné dans <strong>Contacter les partenaires</strong>
+                        </div>
+                        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:3px;">
+                            2 days ago
+                        </div>
+                        <!--[if BLOCK]><![endif]-->                            <a href="/boards/1"
+                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;">
+                                → Voir la tâche
+                            </a>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+                            
+                <div wire:click="markAsRead(2)"
+                     style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:rgba(0,145,205,0.03);"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='rgba(0,145,205,0.03)'">
+
+                    <div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px;"></div>
+
+                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:#f9731622;color:#f97316;">
+                        ○
+                    </div>
+
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;color:var(--text-1);line-height:1.4;">
+                            <strong>Alice</strong> a changé le statut de <strong>Dossier de presse</strong> en <span style="color:#0091CD">En cours</span>
+                        </div>
+                        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:3px;">
+                            2 days ago
+                        </div>
+                        <!--[if BLOCK]><![endif]-->                            <a href="/boards/1"
+                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;">
+                                → Voir
+                            </a>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+                            
+                <div wire:click="markAsRead(3)"
+                     style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:rgba(0,145,205,0.03);"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='rgba(0,145,205,0.03)'">
+
+                    <div style="width:7px;height:7px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:5px;"></div>
+
+                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:#ef444422;color:#ef4444;">
+                        !
+                    </div>
+
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;color:var(--text-1);line-height:1.4;">
+                            La tâche <strong>Valider le budget</strong> arrive à échéance dans 2 jours
+                        </div>
+                        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:3px;">
+                            2 days ago
+                        </div>
+                        <!--[if BLOCK]><![endif]-->                            <a href="/boards/1"
+                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;">
+                                → Voir la tâche
+                            </a>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+                            
+                <div wire:click="markAsRead(5)"
+                     style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;background:white;"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+
+                    <div style="width:7px;height:7px;border-radius:50%;background:transparent;flex-shrink:0;margin-top:5px;"></div>
+
+                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:#6b6b6822;color:#6b6b68;">
+                        …
+                    </div>
+
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;color:var(--text-1);line-height:1.4;">
+                            <strong>Alice</strong> a commenté <strong>Wireframes des pages principales</strong>
+                        </div>
+                        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:3px;">
+                            2 days ago
+                        </div>
+                        <!--[if BLOCK]><![endif]-->                            <a href="/boards/2"
+                               style="font-size:11px;color:var(--blue);text-decoration:none;margin-top:3px;display:inline-block;font-weight:500;">
+                                → Voir le commentaire
+                            </a>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+            <!--[if ENDBLOCK]><![endif]-->        </div>
+
+        
+        <!--[if BLOCK]><![endif]-->            <div style="padding:10px 18px;border-top:1px solid var(--border);text-align:center;">
+                <a href="http://127.0.0.1:8000/notifications"
+                   style="font-size:12px;font-weight:500;color:var(--blue);text-decoration:none;">
+                    Voir toutes les notifications →
+                </a>
+            </div>
+        <!--[if ENDBLOCK]><![endif]-->
+    </div>
+</div>
+
+            
+            <div x-data="{ open: false }" style="position:relative;z-index:70;">
+                <div class="user-avatar"
+                     @click="open = !open"
+                     @keydown.escape.window="open = false"
+                     tabindex="0" role="button">
+                    CA
+                </div>
+
+                <div x-cloak
+                     x-show="open"
+                      @click.outside="open = false"
+                      style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 12px 32px rgba(0,0,0,0.1);padding:6px;z-index:60;">
+
+                    <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;">
+                        <div style="font-size:13px;font-weight:600;">Caleb Messohounsounou</div>
+                        <div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:1px;">caleb@unipod.com</div>
+                    </div>
+
+                    <a href="http://127.0.0.1:8000/settings"
+                       style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:13px;color:var(--text-2);text-decoration:none;transition:background .15s;"
+                       onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.4"/>
+                            <path d="M7 1v1M7 12v1M1 7h1M12 7h1M2.87 2.87l.7.7M10.43 10.43l.7.7M2.87 11.13l.7-.7M10.43 3.57l.7-.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                        </svg>
+                        Paramètres
+                    </a>
+
+                    <form method="POST" action="http://127.0.0.1:8000/logout">
+                        <input type="hidden" name="_token" value="4vGzGLnlXaJLpk1n9vkFkIQNoewIQDkPuhmDBbhF" autocomplete="off">                        <button type="submit"
+                                style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:13px;color:#dc2626;background:none;border:none;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;"
+                                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M9 1H12a1 1 0 011 1v10a1 1 0 01-1 1H9M6 10l3-3-3-3M9 7H1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            Déconnexion
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </header>
+
+        <main id="content" role="main">
+            <div style="display:flex;flex-direction:column;gap:24px;">
+
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+
+        <div>
+            <h2 style="font-size:28px;font-weight:600;letter-spacing:-0.03em;line-height:1;">
+                Aujourd'hui
+            </h2>
+            <p style="font-size:13px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:6px;">
+                Mon 11 May · 11:57
+            </p>
+        </div>
+
+        
+        <div class="bento-card"
+             style="display:flex;align-items:center;gap:16px;padding:14px 20px;cursor:pointer;"
+             x-data="{
+                running: false,
+                seconds: 0,
+                timer: null,
+                get display() {
+                    const h = String(Math.floor(this.seconds / 3600)).padStart(2, '0');
+                    const m = String(Math.floor((this.seconds % 3600) / 60)).padStart(2, '0');
+                    const s = String(this.seconds % 60).padStart(2, '0');
+                    return `${h}:${m}:${s}`;
+                },
+                toggle() {
+                    this.running = !this.running;
+                    if (this.running) {
+                        this.timer = setInterval(() => this.seconds++, 1000);
+                    } else {
+                        clearInterval(this.timer);
+                    }
+                }
+             }"
+             @click="toggle()">
+            <div>
+                <div style="font-size:13px;font-weight:500;">Démarrer le chrono</div>
+                <div style="font-size:18px;font-weight:600;font-family:'DM Mono',monospace;letter-spacing:-0.02em;margin-top:2px;color:var(--color-text-1);"
+                     x-text="display">00:00:00</div>
+            </div>
+            <div style="width:42px;height:42px;background:var(--color-unipod-yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;flex-shrink:0;"
+                 :style="running ? 'transform:scale(1.08)' : ''">
+                <svg x-show="!running" width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-left:2px;">
+                    <path d="M5 3l9 5-9 5V3z" fill="#111110"/>
+                </svg>
+                <svg x-show="running" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="3" y="3" width="4" height="10" rx="1" fill="#111110"/>
+                    <rect x="9" y="3" width="4" height="10" rx="1" fill="#111110"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+
+        
+        <div class="bento-card" style="padding:20px;cursor:pointer;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <span style="font-size:13px;font-weight:500;color:var(--color-text-2);">Activité hebdo</span>
+                <button style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:none;background:none;color:var(--color-text-3);cursor:pointer;font-size:16px;line-height:1;">···</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                    <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;line-height:1;">
+                        0%
+                    </div>
+                    <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:6px;">
+                        vs semaine passée
+                    </div>
+                </div>
+                <div style="width:44px;height:44px;background:var(--color-unipod-yellow-light);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="color:var(--color-unipod-yellow);">
+                        <path d="M4 8l4 8 5-12 4 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="bento-card" style="padding:20px;cursor:pointer;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <span style="font-size:13px;font-weight:500;color:var(--color-text-2);">Temps travaillé</span>
+                <button style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:none;background:none;color:var(--color-text-3);cursor:pointer;font-size:16px;line-height:1;">···</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                    <div style="font-size:28px;font-weight:600;letter-spacing:-0.03em;line-height:1;font-family:'DM Mono',monospace;">
+                        00:00:00
+                    </div>
+                    <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:6px;">cette semaine</div>
+                </div>
+                <div style="width:44px;height:44px;background:var(--color-unipod-yellow-light);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="color:var(--color-unipod-yellow);">
+                        <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M11 6v5.5l3.5 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        
+        <div class="bento-card" style="padding:20px;cursor:pointer;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <span style="font-size:13px;font-weight:500;color:var(--color-text-2);">Projets actifs</span>
+                <button style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px;border:none;background:none;color:var(--color-text-3);cursor:pointer;font-size:16px;line-height:1;">···</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+                <div>
+                    <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;line-height:1;">
+                        03
+                    </div>
+                    <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:6px;">en cours</div>
+                </div>
+                <div style="width:44px;height:44px;background:var(--color-unipod-yellow-light);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="color:var(--color-unipod-yellow);">
+                        <path d="M3 5a2 2 0 012-2h3.586a1 1 0 01.707.293L10.707 5H17a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5z" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+        
+        <div class="bento-card" style="padding:20px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Activité récente</span>
+                <a href="#" style="font-size:12px;color:var(--color-unipod-blue);text-decoration:none;font-weight:500;">
+                    Voir tout
+                </a>
+            </div>
+            <div style="display:flex;flex-direction:column;">
+                                    <div style="text-align:center;padding:32px 0;">
+                        <div style="font-size:28px;margin-bottom:8px;">📋</div>
+                        <div style="font-size:13px;color:var(--color-text-3);">Aucune activité récente</div>
+                    </div>
+                            </div>
+        </div>
+
+        
+        <div class="bento-card" style="padding:20px;display:flex;flex-direction:column;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+                <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Boards</span>
+                <a href="http://127.0.0.1:8000/boards"
+                   style="font-size:12px;font-weight:500;color:var(--color-text-2);text-decoration:none;display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;border:1px solid var(--color-border);transition:all .15s;"
+                   onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                    + Nouveau
+                </a>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
+                                    <a href="http://127.0.0.1:8000/boards/1"
+                       style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit;transition:background .15s;"
+                       onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#0091CD;flex-shrink:0;"></div>
+                        <span style="flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Blochallenge 2025
+                        </span>
+                        <div style="width:80px;height:3px;background:var(--color-bg);border-radius:10px;flex-shrink:0;overflow:hidden;">
+                            <div style="height:100%;background:var(--color-unipod-blue);border-radius:10px;width:22%;transition:width .4s;"></div>
+                        </div>
+                        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-3);flex-shrink:0;">
+                            9
+                        </span>
+                    </a>
+                                    <a href="http://127.0.0.1:8000/boards/2"
+                       style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit;transition:background .15s;"
+                       onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#FFD100;flex-shrink:0;"></div>
+                        <span style="flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Site Web UniPod
+                        </span>
+                        <div style="width:80px;height:3px;background:var(--color-bg);border-radius:10px;flex-shrink:0;overflow:hidden;">
+                            <div style="height:100%;background:var(--color-unipod-blue);border-radius:10px;width:40%;transition:width .4s;"></div>
+                        </div>
+                        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-3);flex-shrink:0;">
+                            5
+                        </span>
+                    </a>
+                                    <a href="http://127.0.0.1:8000/boards/3"
+                       style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;text-decoration:none;color:inherit;transition:background .15s;"
+                       onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div>
+                        <span style="flex:1;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Administration
+                        </span>
+                        <div style="width:80px;height:3px;background:var(--color-bg);border-radius:10px;flex-shrink:0;overflow:hidden;">
+                            <div style="height:100%;background:var(--color-unipod-blue);border-radius:10px;width:0%;transition:width .4s;"></div>
+                        </div>
+                        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-3);flex-shrink:0;">
+                            2
+                        </span>
+                    </a>
+                            </div>
+            <a href="http://127.0.0.1:8000/boards"
+               style="display:block;margin-top:14px;padding:9px;background:var(--color-text-1);color:#fff;text-align:center;border-radius:8px;font-size:13px;font-weight:500;text-decoration:none;transition:background .15s;"
+               onmouseover="this.style.background='#2a2a28'" onmouseout="this.style.background='var(--color-text-1)'">
+                Voir tous les boards
+            </a>
+        </div>
+
+    </div>
+
+    
+    <div class="bento-card" style="padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Tâches urgentes</span>
+                                    <span style="background:#fee2e2;color:#dc2626;font-size:10px;font-weight:600;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:20px;">
+                        3 bloquées
+                    </span>
+                            </div>
+            <a href="http://127.0.0.1:8000/my-tasks" style="font-size:12px;color:var(--color-unipod-blue);text-decoration:none;font-weight:500;">
+                Voir tout →
+            </a>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;">
+                            <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--color-bg);border-radius:10px;cursor:pointer;transition:background .15s;"
+                     onmouseover="this.style.background='#eaeae8'" onmouseout="this.style.background='var(--color-bg)'">
+                    <div style="width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;
+                        background:#dc2626;"></div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Valider le budget prévisionnel
+                        </div>
+                        <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:3px;">
+                            Blochallenge 2025 · 15 Jun
+                        </div>
+                    </div>
+                    <span class="s-blocked" style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;">
+                        Bloqué
+                    </span>
+                </div>
+                            <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--color-bg);border-radius:10px;cursor:pointer;transition:background .15s;"
+                     onmouseover="this.style.background='#eaeae8'" onmouseout="this.style.background='var(--color-bg)'">
+                    <div style="width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;
+                        background:#8b5cf6;"></div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Cérémonie de remise des prix
+                        </div>
+                        <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:3px;">
+                            Blochallenge 2025 · 15 Aug
+                        </div>
+                    </div>
+                    <span class="s-todo" style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;">
+                        Non commencé
+                    </span>
+                </div>
+                            <div style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--color-bg);border-radius:10px;cursor:pointer;transition:background .15s;"
+                     onmouseover="this.style.background='#eaeae8'" onmouseout="this.style.background='var(--color-bg)'">
+                    <div style="width:6px;height:6px;border-radius:50%;margin-top:5px;flex-shrink:0;
+                        background:#8b5cf6;"></div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            Développer la landing page
+                        </div>
+                        <div style="font-size:11px;color:var(--color-text-3);font-family:'DM Mono',monospace;margin-top:3px;">
+                            Site Web UniPod · 25 May
+                        </div>
+                    </div>
+                    <span class="s-progress" style="font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;">
+                        En cours
+                    </span>
+                </div>
+                    </div>
+    </div>
+
+    
+    <div class="bento-card" style="padding:20px;margin-bottom:40px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:14px;font-weight:600;letter-spacing:-0.01em;">Membres</span>
+                <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--color-text-3);background:var(--color-bg);padding:1px 7px;border-radius:20px;">
+                    4
+                </span>
+            </div>
+            <a href="http://127.0.0.1:8000/members" style="font-size:12px;color:var(--color-unipod-blue);text-decoration:none;font-weight:500;">
+                Gérer →
+            </a>
+        </div>
+        <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;font-size:11px;font-weight:500;color:var(--color-text-3);letter-spacing:.05em;text-transform:uppercase;padding:0 10px 10px 0;">Membre</th>
+                        <th style="text-align:left;font-size:11px;font-weight:500;color:var(--color-text-3);letter-spacing:.05em;text-transform:uppercase;padding:0 10px 10px;">Tâche en cours</th>
+                        <th style="text-align:center;font-size:11px;font-weight:500;color:var(--color-text-3);letter-spacing:.05em;text-transform:uppercase;padding:0 10px 10px;">Aujourd'hui</th>
+                        <th style="text-align:center;font-size:11px;font-weight:500;color:var(--color-text-3);letter-spacing:.05em;text-transform:uppercase;padding:0 0 10px;">Cette semaine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                                            <tr style="transition:background .15s;cursor:pointer;"
+                            onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                            <td style="padding:10px 10px 10px 0;border-top:1px solid var(--color-border);">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--color-text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
+                                        CA
+                                    </div>
+                                    <div>
+                                        <div style="font-size:13px;font-weight:500;">Caleb Messohounsounou</div>
+                                        <div style="font-size:11px;color:var(--color-text-3);">caleb@unipod.com</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);font-size:13px;color:var(--color-text-2);">
+                                                                Créer le site web du challenge
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                            <td style="padding:10px 0 10px 10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                        </tr>
+                                            <tr style="transition:background .15s;cursor:pointer;"
+                            onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                            <td style="padding:10px 10px 10px 0;border-top:1px solid var(--color-border);">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--color-text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
+                                        MO
+                                    </div>
+                                    <div>
+                                        <div style="font-size:13px;font-weight:500;">Mohamed AbdoulKader</div>
+                                        <div style="font-size:11px;color:var(--color-text-3);">mohamed@unipod.com</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);font-size:13px;color:var(--color-text-2);">
+                                                                —
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                            <td style="padding:10px 0 10px 10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                        </tr>
+                                            <tr style="transition:background .15s;cursor:pointer;"
+                            onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                            <td style="padding:10px 10px 10px 0;border-top:1px solid var(--color-border);">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--color-text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
+                                        AL
+                                    </div>
+                                    <div>
+                                        <div style="font-size:13px;font-weight:500;">Alice Koné</div>
+                                        <div style="font-size:11px;color:var(--color-text-3);">alice@unipod.com</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);font-size:13px;color:var(--color-text-2);">
+                                                                Préparer le dossier de presse
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                            <td style="padding:10px 0 10px 10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                        </tr>
+                                            <tr style="transition:background .15s;cursor:pointer;"
+                            onmouseover="this.style.background='var(--color-bg)'" onmouseout="this.style.background=''">
+                            <td style="padding:10px 10px 10px 0;border-top:1px solid var(--color-border);">
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                    <div style="width:32px;height:32px;border-radius:50%;background:var(--color-text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;">
+                                        BO
+                                    </div>
+                                    <div>
+                                        <div style="font-size:13px;font-weight:500;">Boris Tchagninou</div>
+                                        <div style="font-size:11px;color:var(--color-text-3);">boris@unipod.com</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);font-size:13px;color:var(--color-text-2);">
+                                                                —
+                            </td>
+                            <td style="padding:10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                            <td style="padding:10px 0 10px 10px;border-top:1px solid var(--color-border);text-align:center;font-size:12px;font-family:'DM Mono',monospace;color:var(--color-text-2);">
+                                00:00
+                            </td>
+                        </tr>
+                                    </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+        </main>
+
+    </div>
+
+<div wire:key="lw-2269648671-1-0-3" wire:snapshot="{&quot;data&quot;:{&quot;isOpen&quot;:false,&quot;item&quot;:null,&quot;activeTab&quot;:&quot;details&quot;,&quot;newComment&quot;:&quot;&quot;,&quot;searchAssignee&quot;:&quot;&quot;},&quot;memo&quot;:{&quot;id&quot;:&quot;rhJvsVSB9pogPrNDu2nb&quot;,&quot;name&quot;:&quot;items.item-panel&quot;,&quot;path&quot;:&quot;\/&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;en&quot;,&quot;islands&quot;:[]},&quot;checksum&quot;:&quot;fc767181dd136692cb60e03cf05e186d5326b0415fe2671aae3260444141fdce&quot;}" wire:effects="{&quot;listeners&quot;:[&quot;open-item-panel&quot;]}" wire:id="rhJvsVSB9pogPrNDu2nb" wire:name="items.item-panel" x-data style="position:fixed;inset:0;pointer-events:none;z-index:40;">
+
+    
+    <div x-cloak
+         x-show="$wire.isOpen"
+         style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);pointer-events:auto;"
+         wire:click="closePanel()">
+    </div>
+
+    
+    <div x-cloak
+         x-show="$wire.isOpen"
+         style="position:absolute;right:0;top:0;height:100%;width:520px;background:white;border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:-16px 0 48px rgba(0,0,0,0.08);pointer-events:auto;">
+
+        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]--> 
+
+            </div>
+</div>
+    <!-- Livewire Scripts -->
+<script src="http://127.0.0.1:8000/livewire-1c08b938/livewire.js?id=ab6b028c"   data-csrf="4vGzGLnlXaJLpk1n9vkFkIQNoewIQDkPuhmDBbhF" data-module-url="http://127.0.0.1:8000/livewire-1c08b938" data-update-uri="http://127.0.0.1:8000/livewire-1c08b938/update" data-navigate-once="true"></script>
+
+    <script>
+    function checkBurger() {
+        const b = document.getElementById('burger-btn');
+        if (b) b.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+    }
+    checkBurger();
+    window.addEventListener('resize', checkBurger);
+    </script>
+
+            <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+        
+</body>
+</html>

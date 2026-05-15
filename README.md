@@ -21,22 +21,25 @@ Ce document est un aperçu exhaustif de l'état actuel du projet : ce qui a ét�
 
 ### 🎨 Frontend (Vues & Composants)
 - **Intégration du Template & Styles :** Mise en place d'une structure de base avec des composants réutilisables grâce à Laravel Blade et Tailwind CSS. Améliorations récentes des layouts globaux (`app`, `guest`, `navigation`).
+- **Authentification personnalisée :** Les vues de connexion et d'inscription générées par Laravel Breeze ont été personnalisées pour correspondre au design moderne de l'application.
 - **Routes & Pages (Vues Statiques / Dynamiques) :**
   - Tableau de bord (`/dashboard`)
   - Gestion des Tableaux (`/boards`) avec 3 vues initialisées (Livewire) : `BoardTable`, `BoardKanban`, `BoardCalendar`.
   - Gestion des Réunions (`/meetings`) avec création (`meeting-create`), liste (`MeetingList`), détails (`meeting-show`) et édition (`meeting-edit`).
   - Autres pages préparées (Blade) : Mes Tâches (`my-tasks`), Calendrier global (`calendar`), Rapports (`reports`), Membres (`members`), et Paramètres (`settings`).
 - **Composants Livewire (Logique UI) :**
-  - Le système de notifications (`Partials/Notifications`) a été enrichi avec une logique backend propre et une vue dédiée pour afficher des alertes interactives.
+  - Le système de notifications (`Partials/Notifications`) a été enrichi avec une logique backend propre et une vue dédiée pour afficher des alertes interactives (marquer comme lu).
   - Autres composants pour la réactivité : `Items/ItemPanel`, gestion des boards (comme `BoardTable`).
 - **Profil Utilisateur :** Ajout des pages de gestion de profil (édition, mise à jour, suppression) gérées avec les routes Laravel de base.
-- **Authentification :** Les vues de connexion, d'inscription, de mot de passe oublié ont été générées et stylisées par Laravel Breeze.
 
 ### ⚙️ Backend (Architecture & Logique)
 - **Configuration Laravel :** Installation propre de Laravel 11.
 - **Authentification & Sécurité :** Système d'authentification Breeze fonctionnel. Les routes principales sont protégées par le middleware `auth`.
-- **Routage :** Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées pour toutes les entités principales (Boards, Meetings, Profil, etc.).
-- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend (ex: ajout de logique dans `Notifications.php` et `BoardTable.php`).
+- **Routage & Contrôleurs (CRUD) :** 
+  - Le fichier `routes/web.php` a été structuré avec des routes groupées et protégées.
+  - **Création implémentée :** Les routes pour la création de Tableaux (`Boards`), de Groupes (`Groups`), et de Tâches (`Items`) avec validation des données et redirections dynamiques sont opérationnelles.
+  - **Notifications :** Routes pour marquer les notifications comme lues (individuellement ou toutes).
+- **Livewire Controllers :** Les classes Livewire servent de contrôleurs pour les vues dynamiques, gérant l'état et les événements du frontend.
 
 ### 🗄️ Base de Données (Modèles & Migrations)
 L'architecture de la base de données relationnelle a été pensée et traduite en migrations Laravel (`database/migrations`) et Modèles Eloquent (`app/Models`) :
@@ -96,8 +99,8 @@ Bien que la structure de base soit présente, plusieurs fonctionnalités clés d
 - [ ] **Éditeur de texte riche :** Intégrer Trix (déjà configuré) pour les descriptions de tâches et les commentaires.
 
 ### ⚙️ Backend (À faire)
-- [ ] **Logique CRUD complète :** Finaliser la création, lecture, modification et suppression pour toutes les entités (Boards, Groups, Items, Meetings).
-- [ ] **Validation des données :** S'assurer que toutes les entrées utilisateurs (Livewire forms) sont strictement validées (Form Requests / Livewire Rules).
+- [ ] **Finalisation du CRUD :** Terminer la lecture, la modification et la suppression (Update, Delete) pour toutes les entités (Boards, Groups, Items, Meetings).
+- [ ] **Validation avancée :** S'assurer que toutes les entrées utilisateurs (Livewire forms) sont strictement validées (Form Requests / Livewire Rules) au-delà de la création simple.
 - [ ] **Gestion des rôles et autorisations :** Implémenter des Policies Laravel pour restreindre l'accès aux Workspaces et Boards selon le rôle de l'utilisateur (Admin, Membre, Lecteur).
 - [ ] **Temps réel (WebSockets) :** Configurer Laravel Echo avec Pusher ou Laravel Reverb pour la mise à jour en temps réel des boards et l'envoi de notifications instantanées.
 

@@ -17,8 +17,8 @@ class BoardCalendar extends Component
     public function mount(Board $board): void
     {
         $this->board = $board;
-        $this->year  = now()->year;
-        $this->month = now()->month;
+        $this->year  = (int) request()->integer('year', now()->year);
+        $this->month = (int) request()->integer('month', now()->month);
     }
 
     public function prevMonth(): void
@@ -51,7 +51,6 @@ class BoardCalendar extends Component
         $startOfMonth = Carbon::create($this->year, $this->month, 1);
         $endOfMonth   = $startOfMonth->copy()->endOfMonth();
 
-        // Items avec deadline dans le mois
         $items = $this->board
             ->items()
             ->with('assignees')
@@ -60,7 +59,7 @@ class BoardCalendar extends Component
             ->get()
             ->groupBy(fn($item) => Carbon::parse($item->deadline)->format('Y-m-d'));
 
-        // Construction de la grille (lundi → dimanche)
+        // Grille lundi → dimanche
         $startOfGrid = $startOfMonth->copy()->startOfWeek(Carbon::MONDAY);
         $endOfGrid   = $endOfMonth->copy()->endOfWeek(Carbon::SUNDAY);
 
@@ -76,7 +75,16 @@ class BoardCalendar extends Component
         }
 
         $monthLabel = $startOfMonth->isoFormat('MMMM YYYY');
+        $groups = $this->board
+            ->groups()
+            ->orderBy('order')
+            ->get();
 
-        return view('livewire.boards.board-calendar', compact('weeks', 'items', 'monthLabel'));
+        return view('livewire.boards.board-calendar', [
+            'weeks'      => $weeks,
+            'items'      => $items,
+            'monthLabel' => $monthLabel,
+            'groups'     => $groups,
+        ]);
     }
 }

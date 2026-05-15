@@ -87,11 +87,16 @@
                         </div>
 
                         {{-- Menu ··· --}}
-                        <div x-data="{ open: false }" style="position:relative;flex-shrink:0;">
-                            <button @click="open = !open" @click.outside="open = false"
+                        <div style="position:relative;flex-shrink:0;">
+                            <button type="button"
+                                    data-dropdown-trigger="meeting-menu-{{ $meeting->id }}"
+                                    aria-controls="meeting-menu-{{ $meeting->id }}"
+                                    aria-expanded="false"
                                     style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:none;background:none;cursor:pointer;font-size:16px;color:var(--text-3);transition:background .12s;"
                                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">···</button>
-                            <div x-show="open" x-transition
+                            <div id="meeting-menu-{{ $meeting->id }}"
+                                 data-dropdown-menu
+                                 hidden
                                  style="position:absolute;right:0;top:calc(100%+4px);background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:150px;z-index:40;">
                                 <a href="{{ route('meetings.show', $meeting) }}"
                                    style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:var(--text-2);text-decoration:none;transition:background .12s;"
@@ -109,8 +114,7 @@
                                 <button wire:click="deleteMeeting({{ $meeting->id }})"
                                         wire:confirm="Supprimer ce compte rendu ?"
                                         style="width:100%;display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:#dc2626;background:none;border:none;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .12s;"
-                                        onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''"
-                                        @click="open=false">
+                                        onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V2h2v1M4 3v7h4V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                                     Supprimer
                                 </button>

@@ -1,14 +1,15 @@
 {{-- resources/views/livewire/partials/notifications.blade.php --}}
 
-{{-- Open/close géré par Alpine uniquement pour éviter les conflits Livewire --}}
-<div x-data="{ open: false }" style="position:relative;">
+<div style="position:relative;z-index:70;">
 
     {{-- ── TRIGGER — Cloche ── --}}
-    <button @click="open = !open"
+    <button type="button"
+            data-dropdown-trigger="notifications-menu"
+            aria-controls="notifications-menu"
+            aria-expanded="false"
             style="width:36px;height:36px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;color:var(--text-2);transition:all .15s;"
             onmouseover="this.style.background='#e8e8e6';this.style.borderColor='var(--border-md)'"
             onmouseout="this.style.background='var(--bg)';this.style.borderColor='var(--border)'"
-            :aria-expanded="open"
             aria-label="Notifications">
 
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -23,16 +24,9 @@
     </button>
 
     {{-- ── DROPDOWN ── --}}
-    <div x-show="open"
-         x-cloak
-         @click.outside="open = false"
-         @keydown.escape.window="open = false"
-         x-transition:enter="transition ease-out duration-150"
-         x-transition:enter-start="opacity-0 translateY-[-4px]"
-         x-transition:enter-end="opacity-100 translateY-0"
-         x-transition:leave="transition ease-in duration-100"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
+    <div id="notifications-menu"
+         data-dropdown-menu
+         hidden
          style="position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;">
 
         {{-- Header --}}

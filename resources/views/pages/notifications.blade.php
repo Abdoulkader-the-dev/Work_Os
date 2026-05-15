@@ -1,92 +1,72 @@
-{{-- resources/views/livewire/partials/notifications.blade.php --}}
-<div x-data="{ open: false }" style="position:relative;">
+<x-app-layout>
+@section('page-title', 'Notifications')
 
-    {{-- ── TRIGGER — Cloche ── --}}
-    <button @click="open = !open"
-            style="width:36px;height:36px;border-radius:8px;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;color:var(--text-2);transition:all .15s;"
-            onmouseover="this.style.background='#e8e8e6'" onmouseout="this.style.background='var(--bg)'">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M8 1.5a5 5 0 00-5 5v3l-1.5 2h13L13 9.5v-3a5 5 0 00-5-5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-            <path d="M6.5 13.5a1.5 1.5 0 003 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
+@php
+    $notifications = auth()->user()?->notifications()->latest()->get() ?? collect();
+    $unreadCount = $notifications->whereNull('read_at')->count();
+@endphp
+
+<div style="display:flex;flex-direction:column;gap:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-3);">
+            {{ $notifications->count() }} notification{{ $notifications->count() > 1 ? 's' : '' }} · {{ $unreadCount }} non lue{{ $unreadCount > 1 ? 's' : '' }}
+        </div>
+
         @if($unreadCount > 0)
-            <div style="position:absolute;top:5px;right:5px;width:7px;height:7px;background:var(--yellow);border-radius:50%;border:1.5px solid white;"></div>
-        @endif
-    </button>
-
-    {{-- ── DROPDOWN — display:none au lieu de x-cloak ── --}}
-    <div x-show="open"
-         @click.outside="open = false"
-         @keydown.escape.window="open = false"
-         style="display:none;position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;">
-
-        {{-- Header --}}
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:14px;font-weight:600;">Notifications</span>
-                @if($unreadCount > 0)
-                    <span style="font-size:10px;font-weight:700;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:20px;background:var(--yellow);color:var(--text-1);">
-                        {{ $unreadCount }}
-                    </span>
-                @endif
-            </div>
-            @if($unreadCount > 0)
-                <button wire:click="markAllAsRead"
-                        style="font-size:11px;font-weight:500;color:var(--blue);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;">
-                    Tout marquer lu
-                </button>
-            @endif
-        </div>
-
-        {{-- Liste --}}
-        <div style="max-height:400px;overflow-y:auto;">
-            @forelse($this->notifications as $notif)
-                @php
-                    $isUnread = is_null($notif->read_at);
-                    $iconMap  = [
-                        'mention'    => ['color' => '#0091CD', 'label' => '@'],
-                        'status'     => ['color' => '#f97316', 'label' => '○'],
-                        'assignment' => ['color' => '#FFD100', 'label' => '+'],
-                        'deadline'   => ['color' => '#ef4444', 'label' => '!'],
-                        'comment'    => ['color' => '#6b6b68', 'label' => '…'],
-                        'default'    => ['color' => '#a3a39f', 'label' => '·'],
-                    ];
-                    $icon = $iconMap[$notif->type ?? 'default'] ?? $iconMap['default'];
-                @endphp
-                <div wire:click="markAsRead({{ $notif->id }})"
-                     style="display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);cursor:pointer;background:{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }};transition:background .15s;"
-                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }}'">
-                    <div style="width:7px;height:7px;border-radius:50%;background:{{ $isUnread ? 'var(--blue)' : 'transparent' }};flex-shrink:0;margin-top:5px;"></div>
-                    <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:{{ $icon['color'] }}22;color:{{ $icon['color'] }};">
-                        {{ $icon['label'] }}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:13px;line-height:1.4;">{!! $notif->message !!}</div>
-                        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:3px;">
-                            {{ $notif->created_at->diffForHumans() }}
-                        </div>
-                        @if($notif->action_url)
-                            <a href="{{ $notif->action_url }}" style="font-size:11px;color:var(--blue);text-decoration:none;font-weight:500;">
-                                → {{ $notif->action_label ?? 'Voir' }}
-                            </a>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div style="text-align:center;padding:40px 24px;">
-                    <div style="font-size:28px;margin-bottom:10px;">🔔</div>
-                    <div style="font-size:13px;font-weight:500;">Tout est à jour</div>
-                    <div style="font-size:12px;color:var(--text-3);margin-top:4px;">Aucune notification</div>
-                </div>
-            @endforelse
-        </div>
-
-        @if($this->notifications->count() > 0)
-            <div style="padding:10px 18px;border-top:1px solid var(--border);text-align:center;">
-                <a href="{{ route('notifications.index') }}" style="font-size:12px;font-weight:500;color:var(--blue);text-decoration:none;">
-                    Voir toutes les notifications →
-                </a>
-            </div>
+            <form method="POST" action="{{ route('notifications.read-all') }}">
+                @csrf
+                <button type="submit" class="btn-primary">Tout marquer lu</button>
+            </form>
         @endif
     </div>
+
+    <div class="bento-card" style="padding:0;overflow:hidden;">
+        @forelse($notifications as $notification)
+            @php
+                $isUnread = is_null($notification->read_at);
+                $iconMap = [
+                    'mention' => ['color' => '#0091CD', 'label' => '@'],
+                    'status' => ['color' => '#f97316', 'label' => '○'],
+                    'assignment' => ['color' => '#FFD100', 'label' => '+'],
+                    'deadline' => ['color' => '#ef4444', 'label' => '!'],
+                    'comment' => ['color' => '#6b6b68', 'label' => '…'],
+                    'default' => ['color' => '#a3a39f', 'label' => '·'],
+                ];
+                $icon = $iconMap[$notification->type ?? 'default'] ?? $iconMap['default'];
+            @endphp
+
+            <div style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);background:{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }};">
+                <div style="width:8px;height:8px;border-radius:50%;background:{{ $isUnread ? 'var(--blue)' : 'transparent' }};flex-shrink:0;margin-top:5px;"></div>
+                <div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;background:{{ $icon['color'] }}22;color:{{ $icon['color'] }};">
+                    {{ $icon['label'] }}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;line-height:1.5;">{!! $notification->message !!}</div>
+                    <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:4px;">
+                        {{ $notification->created_at->isoFormat('ddd D MMM · HH:mm') }}
+                    </div>
+                    @if($notification->action_url)
+                        <a href="{{ $notification->action_url }}" style="display:inline-block;margin-top:6px;font-size:12px;color:var(--blue);text-decoration:none;font-weight:500;">
+                            {{ $notification->action_label ?? 'Voir' }} →
+                        </a>
+                    @endif
+                </div>
+                @if($isUnread)
+                    <form method="POST" action="{{ route('notifications.read', $notification) }}">
+                        @csrf
+                        <button type="submit" style="padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;">
+                            Marquer lu
+                        </button>
+                    </form>
+                @endif
+            </div>
+        @empty
+            <div style="text-align:center;padding:72px 24px;">
+                <div style="font-size:40px;margin-bottom:12px;">🔔</div>
+                <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucune notification</div>
+                <div style="font-size:13px;color:var(--text-3);">Tout est à jour pour le moment.</div>
+            </div>
+        @endforelse
+    </div>
 </div>
+</x-app-layout>

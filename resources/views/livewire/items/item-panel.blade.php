@@ -1,28 +1,19 @@
 {{-- resources/views/livewire/items/item-panel.blade.php --}}
 
-{{-- Overlay --}}
-<div>
-    <div x-show="$wire.isOpen"
-         x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0"
-         style="position:fixed;inset:0;background:rgba(0,0,0,0.2);z-index:40;backdrop-filter:blur(2px);"
+{{-- Div racine fixed — ne prend aucun espace dans le flux --}}
+<div x-data style="position:fixed;inset:0;pointer-events:none;z-index:40;">
+
+    {{-- Overlay --}}
+    <div x-cloak
+         x-show="$wire.isOpen"
+         style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);pointer-events:auto;"
          wire:click="closePanel()">
     </div>
 
     {{-- Panel --}}
-    <div x-show="$wire.isOpen"
-         x-transition:enter="transition ease-out duration-220"
-         x-transition:enter-start="translate-x-full opacity-0"
-         x-transition:enter-end="translate-x-0 opacity-100"
-         x-transition:leave="transition ease-in duration-180"
-         x-transition:leave-start="translate-x-0 opacity-100"
-         x-transition:leave-end="translate-x-full opacity-0"
-         style="position:fixed;right:0;top:0;height:100%;width:520px;background:white;border-left:1px solid var(--border);z-index:50;display:flex;flex-direction:column;box-shadow:-16px 0 48px rgba(0,0,0,0.08);"
-         @click.outside="$wire.closePanel()">
+    <div x-cloak
+         x-show="$wire.isOpen"
+         style="position:absolute;right:0;top:0;height:100%;width:520px;background:white;border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:-16px 0 48px rgba(0,0,0,0.08);pointer-events:auto;">
 
         @if($item)
 
@@ -98,29 +89,28 @@
                 <div style="padding:8px 0;">
 
                     @php
-                        $fieldStyle = 'display:flex;align-items:flex-start;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);';
-                        $labelStyle = 'width:120px;font-size:13px;color:var(--text-2);flex-shrink:0;padding-top:2px;';
-                        $valueStyle = 'flex:1;';
+                        $row   = 'display:flex;align-items:flex-start;gap:16px;padding:12px 0;border-bottom:1px solid var(--border);';
+                        $label = 'width:120px;font-size:13px;color:var(--text-2);flex-shrink:0;padding-top:2px;';
+                        $val   = 'flex:1;';
                     @endphp
 
                     {{-- Statut --}}
-                    <div style="{{ $fieldStyle }}">
-                        <span style="{{ $labelStyle }}">Statut</span>
-                        <div style="{{ $valueStyle }}" x-data="{ open: false }">
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Statut</span>
+                        <div style="{{ $val }}" x-data="{ open: false }">
                             <button @click="open = !open" @click.outside="open = false"
                                     style="display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;"
                                     class="s-{{ $item->status }}">
                                 <span style="width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7;"></span>
                                 {{ match($item->status) { 'done'=>'Achevé','progress'=>'En cours','todo'=>'Non commencé','blocked'=>'Bloqué','ongoing'=>'Continu',default=>ucfirst($item->status) } }}
                             </button>
-                            <div x-show="open" x-transition
-                                 style="margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;z-index:10;position:relative;">
-                                @foreach(['done'=>'Achevé','progress'=>'En cours','todo'=>'Non commencé','blocked'=>'Bloqué','ongoing'=>'Continu'] as $val=>$label)
+                            <div x-show="open" style="display:none;margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
+                                @foreach(['done'=>'Achevé','progress'=>'En cours','todo'=>'Non commencé','blocked'=>'Bloqué','ongoing'=>'Continu'] as $val2=>$lbl)
                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
-                                         wire:click="saveField('status','{{ $val }}')" @click="open=false">
-                                        <span class="s-{{ $val }}" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
-                                        {{ $label }}
+                                         wire:click="saveField('status','{{ $val2 }}')" @click="open=false">
+                                        <span class="s-{{ $val2 }}" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+                                        {{ $lbl }}
                                     </div>
                                 @endforeach
                             </div>
@@ -128,21 +118,20 @@
                     </div>
 
                     {{-- Priorité --}}
-                    <div style="{{ $fieldStyle }}">
-                        <span style="{{ $labelStyle }}">Priorité</span>
-                        <div style="{{ $valueStyle }}" x-data="{ open: false }">
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Priorité</span>
+                        <div style="flex:1;" x-data="{ open: false }">
                             <button @click="open = !open" @click.outside="open = false"
                                     style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;background:none;border:none;cursor:pointer;color:var(--text-1);">
                                 <span style="width:8px;height:8px;border-radius:50%;background:{{ match($item->priority) {'critique'=>'#8b5cf6','haute'=>'#ef4444','moyenne'=>'#FFD100','basse'=>'#22c55e',default=>'#a3a39f'} }};"></span>
                                 {{ ucfirst($item->priority ?? 'Moyenne') }}
                             </button>
-                            <div x-show="open" x-transition
-                                 style="margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
-                                @foreach(['critique'=>['#8b5cf6','Critique'],'haute'=>['#ef4444','Haute'],'moyenne'=>['#FFD100','Moyenne'],'basse'=>['#22c55e','Basse']] as $val=>[$color,$label])
+                            <div x-show="open" style="display:none;margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
+                                @foreach(['critique'=>['#8b5cf6','Critique'],'haute'=>['#ef4444','Haute'],'moyenne'=>['#FFD100','Moyenne'],'basse'=>['#22c55e','Basse']] as $v=>[$color,$lbl])
                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
-                                         wire:click="saveField('priority','{{ $val }}')" @click="open=false">
-                                        <span style="width:7px;height:7px;border-radius:50%;background:{{ $color }};"></span>{{ $label }}
+                                         wire:click="saveField('priority','{{ $v }}')" @click="open=false">
+                                        <span style="width:7px;height:7px;border-radius:50%;background:{{ $color }};"></span>{{ $lbl }}
                                     </div>
                                 @endforeach
                             </div>
@@ -150,9 +139,9 @@
                     </div>
 
                     {{-- Assignés --}}
-                    <div style="{{ $fieldStyle }}">
-                        <span style="{{ $labelStyle }}">Assigné(s)</span>
-                        <div style="{{ $valueStyle }}" x-data="{ addOpen: false }">
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Assigné(s)</span>
+                        <div style="flex:1;" x-data="{ addOpen: false }">
                             <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
                                 @foreach($item->assignees as $assignee)
                                     <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:20px;font-size:12px;">
@@ -170,10 +159,8 @@
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                                 </button>
                             </div>
-                            {{-- Assignee picker --}}
-                            <div x-show="addOpen" x-transition
-                                 style="margin-top:8px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:8px;">
-                                <input type="text" wire:model.live="searchAssignee" placeholder="Rechercher un membre..."
+                            <div x-show="addOpen" style="display:none;margin-top:8px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:8px;">
+                                <input type="text" wire:model.live="searchAssignee" placeholder="Rechercher..."
                                        style="width:100%;font-size:13px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);outline:none;font-family:'DM Sans',sans-serif;"
                                        onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
                                 <div style="margin-top:6px;max-height:160px;overflow-y:auto;">
@@ -184,10 +171,7 @@
                                             <div style="width:26px;height:26px;border-radius:50%;background:var(--text-1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;">
                                                 {{ strtoupper(substr($user->name, 0, 2)) }}
                                             </div>
-                                            <div>
-                                                <div style="font-weight:500;">{{ $user->name }}</div>
-                                                <div style="font-size:11px;color:var(--text-3);">{{ $user->role ?? 'Membre' }}</div>
-                                            </div>
+                                            {{ $user->name }}
                                         </div>
                                     @endforeach
                                 </div>
@@ -196,38 +180,35 @@
                     </div>
 
                     {{-- Deadline --}}
-                    <div style="{{ $fieldStyle }}">
-                        <span style="{{ $labelStyle }}">Deadline</span>
-                        <div style="{{ $valueStyle }}">
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Deadline</span>
+                        <div style="flex:1;">
                             <input type="text"
                                    value="{{ $item->deadline?->format('d M Y') ?? '' }}"
                                    placeholder="Choisir une date..."
                                    style="font-size:13px;background:none;border:none;border-bottom:1px solid var(--border);outline:none;padding:2px 0;font-family:'DM Mono',monospace;color:{{ $item->deadline?->isPast() ? '#dc2626' : 'var(--text-1)' }};cursor:pointer;width:100%;"
-                                   onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
                                    x-init="flatpickr($el, { locale:'fr', dateFormat:'d M Y', onChange(dates){ $wire.saveField('deadline', dates[0]?.toISOString().split('T')[0] || '') } })">
                         </div>
                     </div>
 
                     {{-- Livrable --}}
-                    <div style="{{ $fieldStyle }}">
-                        <span style="{{ $labelStyle }}">Livrable</span>
-                        <div style="{{ $valueStyle }}">
+                    <div style="{{ $row }}">
+                        <span style="{{ $label }}">Livrable</span>
+                        <div style="flex:1;">
                             <textarea rows="2"
-                                      placeholder="Ex: Draft MoU envoyé, Rapport finalisé..."
+                                      placeholder="Ex: Draft MoU envoyé..."
                                       style="width:100%;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;resize:none;outline:none;color:var(--text-1);transition:border-color .15s;"
                                       onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
                                       wire:blur="saveField('deliverable', $event.target.value)">{{ $item->deliverable }}</textarea>
                         </div>
                     </div>
 
-                    {{-- Journal des obstacles --}}
-                    <div style="{{ $fieldStyle }} border-bottom:none;">
-                        <span style="{{ $labelStyle }}">
-                            Journal obstacles
-                        </span>
-                        <div style="{{ $valueStyle }}">
+                    {{-- Journal obstacles --}}
+                    <div style="display:flex;align-items:flex-start;gap:16px;padding:12px 0;">
+                        <span style="width:120px;font-size:13px;color:var(--text-2);flex-shrink:0;padding-top:2px;">Obstacles</span>
+                        <div style="flex:1;">
                             <textarea rows="3"
-                                      placeholder="Décris les blocages rencontrés pour alerter les responsables..."
+                                      placeholder="Décris les blocages rencontrés..."
                                       style="width:100%;font-size:13px;font-family:'DM Sans',sans-serif;background:{{ $item->obstacles ? '#fff4e5' : 'var(--bg)' }};border:1px solid {{ $item->obstacles ? '#fdba74' : 'var(--border)' }};border-radius:8px;padding:8px 10px;resize:none;outline:none;color:var(--text-1);transition:all .15s;"
                                       onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='{{ $item->obstacles ? '#fdba74' : 'var(--border)' }}'"
                                       wire:blur="saveField('obstacles', $event.target.value)">{{ $item->obstacles }}</textarea>
@@ -251,11 +232,9 @@
                             <div style="flex:1;">
                                 <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px;">
                                     <span style="font-size:13px;font-weight:600;">{{ $comment->user->name }}</span>
-                                    <span style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;">
-                                        {{ $comment->created_at->diffForHumans() }}
-                                    </span>
+                                    <span style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
-                                <div style="background:var(--bg);border-radius:12px;border-top-left-radius:4px;padding:10px 14px;font-size:13px;color:var(--text-1);line-height:1.5;">
+                                <div style="background:var(--bg);border-radius:12px;border-top-left-radius:4px;padding:10px 14px;font-size:13px;line-height:1.5;">
                                     {!! nl2br(e(preg_replace('/@(\w+)/', '<span style="color:var(--blue);font-weight:500;">@$1</span>', $comment->body))) !!}
                                 </div>
                             </div>
@@ -263,7 +242,7 @@
                     @empty
                         <div style="text-align:center;padding:32px;color:var(--text-3);">
                             <div style="font-size:24px;margin-bottom:8px;">💬</div>
-                            <div style="font-size:13px;">Aucun commentaire — soyez le premier !</div>
+                            <div style="font-size:13px;">Aucun commentaire</div>
                         </div>
                     @endforelse
                 </div>
@@ -271,23 +250,15 @@
 
             {{-- ─ TAB HISTORIQUE ─ --}}
             @if($activeTab === 'history')
-                <div style="padding:16px 0;position:relative;">
-                    <div style="position:absolute;left:15px;top:16px;bottom:16px;width:1px;background:var(--border);"></div>
-                    @foreach($item->activityLog ?? [] as $log)
-                        <div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px;position:relative;">
-                            <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;margin-top:4px;position:relative;z-index:1;"></div>
-                            <div>
-                                <div style="font-size:13px;color:var(--text-1);">{{ $log['description'] ?? '' }}</div>
-                                <div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px;">{{ $log['time'] ?? '' }}</div>
-                            </div>
-                        </div>
-                    @endforeach
+                <div style="padding:16px 0;text-align:center;color:var(--text-3);font-size:13px;">
+                    <div style="font-size:24px;margin-bottom:8px;">📋</div>
+                    Historique bientôt disponible
                 </div>
             @endif
 
         </div>
 
-        {{-- ── ZONE COMMENTAIRE (sticky bottom) ── --}}
+        {{-- ── ZONE COMMENTAIRE ── --}}
         @if($activeTab === 'comments')
             <div style="padding:14px 24px;border-top:1px solid var(--border);flex-shrink:0;">
                 <div style="display:flex;gap:10px;align-items:flex-end;">
@@ -297,7 +268,7 @@
                     <textarea wire:model="newComment"
                               placeholder="Écrire un commentaire... (@mention)"
                               rows="2"
-                              style="flex:1;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:10px;padding:8px 12px;resize:none;outline:none;color:var(--text-1);transition:border-color .15s;"
+                              style="flex:1;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:10px;padding:8px 12px;resize:none;outline:none;transition:border-color .15s;"
                               onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'"
                               wire:keydown.ctrl.enter="addComment()">
                     </textarea>
@@ -315,5 +286,10 @@
 
         @endif {{-- end if($item) --}}
 
+        @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+        @endpush
     </div>
 </div>

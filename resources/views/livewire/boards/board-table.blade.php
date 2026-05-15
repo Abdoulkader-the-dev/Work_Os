@@ -3,21 +3,42 @@
 @section('page-title', $board->name)
 
 @section('view-switcher')
-    <button class="view-btn active" wire:navigate href="{{ route('boards.show', $board) }}">Tableau</button>
-    <button class="view-btn" wire:navigate href="{{ route('boards.kanban', $board) }}">Kanban</button>
-    <button class="view-btn" wire:navigate href="{{ route('boards.calendar', $board) }}">Calendrier</button>
+    <a class="view-btn active" href="{{ route('boards.show', $board) }}">Tableau</a>
+    <a class="view-btn" href="{{ route('boards.kanban', $board) }}">Kanban</a>
+    <a class="view-btn" href="{{ route('boards.calendar', $board) }}">Calendrier</a>
 @endsection
 
 @section('topbar-action')
-    <button class="btn-primary" wire:click="addGroup">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Nouveau groupe
-    </button>
+    <div style="display:flex;align-items:center;gap:8px;">
+        <a class="btn-primary" href="{{ route('boards.show', ['board' => $board, 'createTask' => 1]) }}">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Nouvelle tâche
+        </a>
+        <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
+           style="height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-2);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-decoration:none;">
+            Nouveau groupe
+        </a>
+    </div>
 @endsection
 
 <div style="display:flex;flex-direction:column;gap:0;">
+    @include('livewire.boards.partials.create-task-panel', [
+        'groups' => $taskGroups,
+        'taskContext' => [
+            'show' => request()->boolean('createTask'),
+            'open_url' => route('boards.show', [
+                'board' => $board,
+                'createTask' => 1,
+            ]),
+            'cancel_url' => route('boards.show', $board),
+            'view' => 'table',
+            'group_id' => request('group'),
+            'status' => request('status', 'todo'),
+            'deadline' => request('date'),
+        ],
+    ])
 
     {{-- ── BULK ACTION BAR ── --}}
     <div x-show="$wire.bulkMode"
@@ -56,21 +77,73 @@
         <div wire:key="group-{{ $group->id }}" style="margin-bottom:24px;">
 
             {{-- Group header --}}
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;user-select:none;border-radius:6px;transition:background .15s;"
-                 wire:click="toggleGroup({{ $group->id }})"
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 4px;user-select:none;border-radius:6px;transition:background .15s;"
                  onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
 
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;{{ in_array($group->id, $openGroups) ? '' : 'transform:rotate(-90deg)' }}">
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <div style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;"
+                     wire:click="toggleGroup({{ $group->id }})">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;{{ in_array($group->id, $openGroups) ? '' : 'transform:rotate(-90deg)' }}">
+                        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
 
-                <div style="width:4px;height:16px;border-radius:2px;background:{{ $group->color ?? '#0091CD' }};flex-shrink:0;"></div>
+                    <div style="width:4px;height:16px;border-radius:2px;background:{{ $group->color ?? '#0091CD' }};flex-shrink:0;"></div>
 
-                <span style="font-size:13px;font-weight:600;letter-spacing:-0.01em;">{{ $group->name }}</span>
+                    @if(($editingGroup['group_id'] ?? null) == $group->id)
+                        <input type="text"
+                               value="{{ $group->name }}"
+                               style="background:transparent;border:none;border-bottom:2px solid var(--blue);outline:none;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;padding:0;"
+                               autofocus
+                               wire:blur="saveGroupName({{ $group->id }}, $event.target.value)"
+                               wire:keydown.enter="saveGroupName({{ $group->id }}, $event.target.value)"
+                               wire:keydown.escape="$set('editingGroup', [])"
+                               @click.stop>
+                    @else
+                        <span style="font-size:13px;font-weight:600;letter-spacing:-0.01em;"
+                              wire:dblclick.stop="startEditingGroup({{ $group->id }})">
+                            {{ $group->name }}
+                        </span>
+                    @endif
 
-                <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);background:var(--bg);padding:1px 7px;border-radius:20px;">
-                    {{ $group->items->count() }}
-                </span>
+                    <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);background:var(--bg);padding:1px 7px;border-radius:20px;">
+                        {{ $group->items->count() }}
+                    </span>
+                </div>
+
+                {{-- Group actions dropdown --}}
+                <div x-data="{ open: false }" style="position:relative;">
+                    <button @click="open = !open" @click.outside="open = false"
+                            style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:5px;border:none;background:none;cursor:pointer;color:var(--text-3);transition:background .12s;"
+                            onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background=''">
+                        ···
+                    </button>
+
+                    <div x-show="open"
+                         style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
+                        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
+                             onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+                             wire:click="startEditingGroup({{ $group->id }})" @click="open=false">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 9.5l1.5 1.5L11 2.5 9.5 1 1 9.5zM1 9.5v1.5h1.5" stroke="currentColor" stroke-width="1.2"/></svg>
+                            Renommer
+                        </div>
+
+                        <div style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;">Couleur</div>
+                        <div style="display:flex;gap:6px;padding:4px 10px 8px;flex-wrap:wrap;">
+                            @foreach(['#0091CD', '#22c55e', '#ef4444', '#f97316', '#8b5cf6', '#111110'] as $color)
+                                <div wire:click="updateGroupColor({{ $group->id }}, '{{ $color }}')"
+                                     style="width:16px;height:16px;border-radius:50%;background:{{ $color }};cursor:pointer;border:{{ ($group->color ?? '#0091CD') === $color ? '2px solid #111110' : '1px solid var(--border)' }};"
+                                     title="{{ $color }}"></div>
+                            @endforeach
+                        </div>
+
+                        <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;"></div>
+                        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;color:#dc2626;transition:background .12s;"
+                             onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''"
+                             wire:click="deleteGroup({{ $group->id }})" wire:confirm="Supprimer ce groupe et toutes ses tâches ?" @click="open=false">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V1.5h2V3M4 3v7h4V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+                            Supprimer
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Table --}}
@@ -278,31 +351,14 @@
                             {{-- Add item row --}}
                             <tr>
                                 <td colspan="8" style="padding:0;border-top:1px solid var(--border);">
-                                    <div x-data="{ adding: false }" style="padding:8px 52px;">
-                                        <div x-show="!adding"
-                                             @click="adding = true"
-                                             style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-3);cursor:pointer;width:fit-content;padding:4px 8px;border-radius:6px;transition:all .15s;"
-                                             onmouseover="this.style.color='var(--blue)';this.style.background='var(--blue-light)'" onmouseout="this.style.color='var(--text-3)';this.style.background=''">
+                                    <div style="padding:8px 52px;">
+                                        <a href="{{ route('boards.show', ['board' => $board, 'createTask' => 1, 'group' => $group->id]) }}"
+                                           style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-3);cursor:pointer;width:fit-content;padding:4px 8px;border-radius:6px;transition:all .15s;text-decoration:none;"
+                                           onmouseover="this.style.color='var(--blue)';this.style.background='var(--blue-light)'"
+                                           onmouseout="this.style.color='var(--text-3)';this.style.background=''">
                                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
                                             Ajouter une tâche
-                                        </div>
-                                        <div x-show="adding"
-                                             style="display:none;align-items:center;gap:8px;">
-                                            <input type="text"
-                                                   wire:model="newItemName"
-                                                   placeholder="Nom de la tâche..."
-                                                   style="flex:1;font-size:13px;background:transparent;border:none;border-bottom:2px solid var(--blue);outline:none;padding:4px 0;font-family:'DM Sans',sans-serif;"
-                                                   x-ref="newInput"
-                                                   x-init="$watch('adding', v => v && $nextTick(() => $refs.newInput?.focus()))"
-                                                   wire:keydown.enter="addItem({{ $group->id }})"
-                                                   wire:keydown.escape="$set('newItemName', ''); adding = false">
-                                            <button wire:click="addItem({{ $group->id }})"
-                                                    style="padding:4px 12px;background:var(--text-1);color:white;border:none;border-radius:6px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;">
-                                                Ajouter
-                                            </button>
-                                            <button @click="adding = false"
-                                                    style="padding:4px 8px;background:none;border:none;color:var(--text-3);cursor:pointer;font-size:13px;">✕</button>
-                                        </div>
+                                        </a>
                                     </div>
                                 </td>
                             </tr>
@@ -313,13 +369,63 @@
         </div>
     @endforeach
 
-    {{-- Add group button --}}
-    <button wire:click="addGroup"
-            style="width:100%;padding:14px;border:2px dashed var(--border-md);border-radius:12px;background:none;font-size:13px;color:var(--text-3);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;margin-top:8px;"
-            onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blue-light)'"
-            onmouseout="this.style.borderColor='var(--border-md)';this.style.color='var(--text-3)';this.style.background=''">
-        + Ajouter un groupe
-    </button>
+    {{-- Add group inline input --}}
+    <div style="margin-top:8px;">
+        @if (session('group_created_id'))
+            <div style="margin-bottom:12px;padding:10px 12px;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:10px;font-size:13px;">
+                Groupe ajouté au board.
+            </div>
+        @endif
+
+        @if($errors->any() && $isCreatingGroup)
+            <div style="margin-bottom:12px;padding:10px 12px;border:1px solid #fecaca;background:#fef2f2;color:#991b1b;border-radius:10px;font-size:13px;">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
+        @if(!$isCreatingGroup)
+        <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
+             style="display:block;width:100%;padding:14px;border:2px dashed var(--border-md);border-radius:12px;background:none;font-size:13px;color:var(--text-3);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-align:center;text-decoration:none;"
+             onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)';this.style.background='var(--blue-light)'"
+             onmouseout="this.style.borderColor='var(--border-md)';this.style.color='var(--text-3)';this.style.background=''">
+            + Ajouter un groupe
+        </a>
+        @endif
+
+        @if($isCreatingGroup)
+        <div style="padding:16px;background:white;border:1px solid var(--blue);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:12px;height:12px;border-radius:50%;background:{{ old('color', '#0091CD') }};flex-shrink:0;"></div>
+                <form method="POST" action="{{ route('boards.groups.store', $board) }}" style="display:flex;align-items:center;gap:12px;flex:1;">
+                    @csrf
+                    <input type="text"
+                           id="new-group-input"
+                           name="name"
+                           value="{{ old('name') }}"
+                           placeholder="Nom du nouveau groupe..."
+                           autofocus
+                           style="flex:1;font-size:14px;font-weight:600;background:transparent;border:none;border-bottom:2px solid var(--blue);outline:none;padding:4px 0;font-family:'DM Sans',sans-serif;">
+
+                    <div style="display:flex;gap:4px;">
+                        @foreach(['#0091CD', '#22c55e', '#ef4444', '#f97316', '#8b5cf6', '#111110'] as $color)
+                            <label style="cursor:pointer;">
+                                <input type="radio" name="color" value="{{ $color }}" {{ old('color', '#0091CD') === $color ? 'checked' : '' }} style="display:none;">
+                                <span style="display:block;width:18px;height:18px;border-radius:50%;background:{{ $color }};border:{{ old('color', '#0091CD') === $color ? '2px solid #111110' : '1px solid var(--border)' }};"></span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <button type="submit"
+                            style="padding:6px 16px;background:var(--text-1);color:white;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">
+                        Créer
+                    </button>
+                    <a href="{{ route('boards.show', $board) }}"
+                       style="padding:6px;background:none;border:none;color:var(--text-3);cursor:pointer;font-size:16px;text-decoration:none;">✕</a>
+                </form>
+            </div>
+        </div>
+        @endif
+    </div>
 
 </div>
 

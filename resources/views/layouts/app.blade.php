@@ -63,6 +63,7 @@
             height:var(--topbar-h); min-height:var(--topbar-h);
             background:var(--surface); border-bottom:1px solid var(--border);
             display:flex; align-items:center; gap:14px; padding:0 28px;
+            position:relative; z-index:50; overflow:visible; flex-shrink:0;
         }
 
         #content { flex:1; overflow-y:auto; padding:28px; }
@@ -158,7 +159,21 @@
     </style>
 </head>
 
-<body x-data="appShell()" @keydown.escape.window="closeMobileSidebar()">
+<body
+    x-data="{
+        mobileSidebarOpen: false,
+        toggleMobileSidebar() {
+            this.mobileSidebarOpen = !this.mobileSidebarOpen;
+            document.getElementById('sidebar').classList.toggle('open', this.mobileSidebarOpen);
+            document.getElementById('sidebar-overlay').classList.toggle('open', this.mobileSidebarOpen);
+        },
+        closeMobileSidebar() {
+            this.mobileSidebarOpen = false;
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('open');
+        }
+    }"
+    @keydown.escape.window="closeMobileSidebar()">
 
     {{-- ══ SIDEBAR ══ --}}
     <aside id="sidebar" :class="{ 'open': mobileSidebarOpen }">
@@ -263,9 +278,9 @@
 
         </nav>
 
-        <div style="padding:12px;border-top:1px solid var(--border);">
+        <div x-data="{ open: false }" style="padding:12px;border-top:1px solid var(--border);position:relative;">
             <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);padding:0 2px;margin-bottom:6px;">Workspace</div>
-            <div class="workspace-selector" x-data="{ open: false }" @click="open = !open" @click.outside="open = false">
+            <div class="workspace-selector" @click="open = !open" @click.outside="open = false">
                 <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;"></div>
                 <span style="font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                     {{ auth()->user()?->workspaces()->first()?->name ?? 'UniPod HQ' }}
@@ -275,8 +290,9 @@
                 </svg>
             </div>
             {{-- Dropdown workspace --}}
-            <div x-show="open"
-                 style="display:none;position:absolute;bottom:68px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-btn);box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;z-index:50;">
+            <div x-cloak
+                 x-show="open"
+                  style="display:none;position:absolute;bottom:68px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-btn);box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;z-index:50;">
                 @foreach(auth()->user()?->workspaces ?? [] as $ws)
                     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s;"
                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
@@ -327,18 +343,20 @@
             {{-- Notifications --}}
             <livewire:partials.notifications />
 
-            {{-- User menu — géré entièrement par Alpine, display:none natif --}}
-            <div x-data="{ open: false }" style="position:relative;">
+            {{-- User menu --}}
+            <div style="position:relative;z-index:70;">
                 <div class="user-avatar"
-                     @click="open = !open"
-                     @keydown.escape.window="open = false"
+                     data-dropdown-trigger="profile-menu"
+                     aria-controls="profile-menu"
+                     aria-expanded="false"
                      tabindex="0" role="button">
                     {{ strtoupper(substr(auth()->user()?->name ?? 'U', 0, 2)) }}
                 </div>
 
-                <div x-show="open"
-                     @click.outside="open = false"
-                     style="display:none;position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 12px 32px rgba(0,0,0,0.1);padding:6px;z-index:60;">
+                <div id="profile-menu"
+                     data-dropdown-menu
+                     hidden
+                     style="position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 12px 32px rgba(0,0,0,0.1);padding:6px;z-index:60;">
 
                     <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;">
                         <div style="font-size:13px;font-weight:600;">{{ auth()->user()?->name }}</div>
@@ -376,29 +394,66 @@
         </main>
 
     </div>
-
+{{-- Item Panel global (écoute les events de toutes les vues) --}}
+<livewire:items.item-panel />
     @livewireScripts
 
     <script>
-    function appShell() {
-        return {
-            mobileSidebarOpen: false,
-            toggleMobileSidebar() {
-                this.mobileSidebarOpen = !this.mobileSidebarOpen;
-                document.getElementById('sidebar').classList.toggle('open', this.mobileSidebarOpen);
-                document.getElementById('sidebar-overlay').classList.toggle('open', this.mobileSidebarOpen);
-            },
-            closeMobileSidebar() {
-                this.mobileSidebarOpen = false;
-                document.getElementById('sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-            }
-        }
-    }
     function checkBurger() {
         const b = document.getElementById('burger-btn');
         if (b) b.style.display = window.innerWidth <= 768 ? 'flex' : 'none';
     }
+
+    function closeDropdownMenus(exceptId = null) {
+        document.querySelectorAll('[data-dropdown-menu]').forEach((menu) => {
+            const menuId = menu.id;
+            const trigger = document.querySelector(`[data-dropdown-trigger="${menuId}"]`);
+            const shouldStayOpen = exceptId && menuId === exceptId;
+
+            menu.hidden = !shouldStayOpen;
+
+            if (trigger) {
+                trigger.setAttribute('aria-expanded', shouldStayOpen ? 'true' : 'false');
+            }
+        });
+    }
+
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-dropdown-trigger]');
+
+        if (trigger) {
+            const menuId = trigger.getAttribute('data-dropdown-trigger');
+            const menu = document.getElementById(menuId);
+
+            if (!menu) return;
+
+            const willOpen = menu.hidden;
+            closeDropdownMenus(willOpen ? menuId : null);
+            return;
+        }
+
+        if (!event.target.closest('[data-dropdown-menu]')) {
+            closeDropdownMenus();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeDropdownMenus();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        const trigger = event.target.closest('[data-dropdown-trigger]');
+
+        if (!trigger) return;
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            trigger.click();
+        }
+    });
+
     checkBurger();
     window.addEventListener('resize', checkBurger);
     </script>

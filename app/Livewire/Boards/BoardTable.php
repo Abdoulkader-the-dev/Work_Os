@@ -13,38 +13,100 @@ class BoardTable extends Component
 {
     public Board $board;
     public array $openGroups   = [];
+    public array $editingGroup = [];
     public array $editingCell  = [];   // ['item_id' => x, 'field' => 'name']
     public string $newItemName = '';
     public array $bulkSelected = [];
     public bool $bulkMode      = false;
     public string $bulkAction  = '';
+    public bool $isCreatingGroup = false;
+    public string $newGroupName = '';
+    public string $newGroupColor = '#0091CD';
 
     public function mount(Board $board): void
     {
-        $this->board      = $board;
-        $this->openGroups = $board->groups()->pluck('id')->toArray();
+        $this->board = $board;
+        $this->openGroups = $board->groups()->orderBy('order')->pluck('id')->all();
+        $this->isCreatingGroup = request()->boolean('createGroup') || session()->has('errors');
+
+        if (session()->has('group_created_id')) {
+            $groupId = (int) session('group_created_id');
+
+            if (!in_array($groupId, $this->openGroups, true)) {
+                $this->openGroups[] = $groupId;
+            }
+        }
     }
 
-    // ── Groupes ──────────────────────────────────────────────
+    #[On('trigger-group-creation')]
+    public function showGroupInput(): void
+    {
+        $this->isCreatingGroup = true;
+        $this->dispatch('focus-new-group-input');
+    }
+
+    public function cancelGroupCreation(): void
+    {
+        $this->resetGroupCreationForm();
+    }
+
     public function toggleGroup(int $groupId): void
     {
-        if (in_array($groupId, $this->openGroups)) {
+        if (in_array($groupId, $this->openGroups, true)) {
             $this->openGroups = array_values(array_filter(
-                $this->openGroups, fn($id) => $id !== $groupId
+                $this->openGroups,
+                fn ($id) => $id !== $groupId
             ));
-        } else {
-            $this->openGroups[] = $groupId;
+
+            return;
         }
+
+        $this->openGroups[] = $groupId;
     }
 
     public function addGroup(): void
     {
+        $name = trim($this->newGroupName) ?: 'Nouveau groupe';
+
         $group = $this->board->groups()->create([
-            'name'  => 'Nouveau groupe',
-            'color' => '#0091CD',
-            'order' => $this->board->groups()->max('order') + 1,
+            'name'  => $name,
+            'color' => $this->newGroupColor,
+            'order' => ((int) $this->board->groups()->max('order')) + 1,
         ]);
-        $this->openGroups[] = $group->id;
+
+        if (!in_array($group->id, $this->openGroups, true)) {
+            $this->openGroups[] = $group->id;
+        }
+
+        $this->resetGroupCreationForm();
+    }
+
+    public function deleteGroup(int $groupId): void
+    {
+        $group = Group::findOrFail($groupId);
+        $group->delete();
+        
+        $this->openGroups = array_values(array_filter(
+            $this->openGroups, fn($id) => $id !== $groupId
+        ));
+    }
+
+    public function startEditingGroup(int $groupId): void
+    {
+        $this->editingGroup = ['group_id' => $groupId];
+    }
+
+    public function saveGroupName(int $groupId, string $newName): void
+    {
+        if (empty(trim($newName))) return;
+        
+        Group::findOrFail($groupId)->update(['name' => $newName]);
+        $this->editingGroup = [];
+    }
+
+    public function updateGroupColor(int $groupId, string $color): void
+    {
+        Group::findOrFail($groupId)->update(['color' => $color]);
     }
 
     // ── Items ─────────────────────────────────────────────────
@@ -143,6 +205,13 @@ class BoardTable extends Component
         $this->dispatch('open-item-panel', itemId: $itemId);
     }
 
+    protected function resetGroupCreationForm(): void
+    {
+        $this->newGroupName = '';
+        $this->newGroupColor = '#0091CD';
+        $this->isCreatingGroup = false;
+    }
+
     public function render()
     {
         $groups = $this->board
@@ -151,6 +220,9 @@ class BoardTable extends Component
             ->orderBy('order')
             ->get();
 
-        return view('livewire.boards.board-table', compact('groups'));
+        return view('livewire.boards.board-table', [
+            'groups' => $groups,
+            'taskGroups' => $groups,
+        ]);
     }
 }
