@@ -31,15 +31,12 @@ class MeetingEditor extends Component
     public bool   $saved        = false;
     public string $saveMessage  = '';
 
-    public function mount(?Meeting $meeting = null): void
+    public function mount(?int $meetingId = null): void
     {
-        $meeting?->exists
-            ? $this->authorize('update', $meeting)
-            : $this->authorize('create', Meeting::class);
+        if ($meetingId) {
+            $meeting = Meeting::findOrFail($meetingId);
+            $this->authorize('update', $meeting);
 
-        $this->date = now()->format('Y-m-d');
-
-        if ($meeting && $meeting->exists) {
             $this->meetingId       = $meeting->id;
             $this->title           = $meeting->title;
             $this->date            = $meeting->date->format('Y-m-d');
@@ -47,6 +44,9 @@ class MeetingEditor extends Component
             $this->bilan           = $meeting->bilan ?: [''];
             $this->recommendations = $meeting->recommendations ?: [''];
             $this->actions         = $meeting->actions ?: [];
+        } else {
+            $this->authorize('create', Meeting::class);
+            $this->date = now()->format('Y-m-d');
         }
 
         if (empty($this->actions)) {
@@ -209,7 +209,14 @@ class MeetingEditor extends Component
 
     public function getAvailableUsersProperty()
     {
-        return \App\Models\User::orderBy('name')->get();
+        $workspace = auth()->user()?->currentWorkspace;
+        if (!$workspace) return collect([auth()->user()]);
+
+        return collect([$workspace->owner])
+            ->merge($workspace->members)
+            ->filter()
+            ->unique('id')
+            ->sortBy('name');
     }
 
     public function render()

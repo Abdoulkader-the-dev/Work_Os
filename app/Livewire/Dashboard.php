@@ -1,0 +1,134 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Board;
+use App\Models\Item;
+use App\Models\Meeting;
+use Livewire\Component;
+use Livewire\Attributes\On;
+
+class Dashboard extends Component
+{
+    public $workspace;
+    
+    #[On('echo:board-updated,BoardUpdated')]
+    #[On('meeting-saved')]
+    #[On('action-converted')]
+    public function refresh()
+    {
+        // Re-render
+    }
+
+    public function render()
+    {
+        $user = auth()->user();
+        $this->workspace = $user?->currentWorkspace;
+
+        $boardQuery = Board::query()
+            ->where('workspace_id', $this->workspace?->id);
+
+        $itemQuery = Item::query()
+            ->whereHas('group.board', fn ($query) => $query->where('workspace_id', $this->workspace?->id));
+
+        $boards = (clone $boardQuery)->get();
+        $activeBoards = $boards->count();
+        $totalTasks = (clone $itemQuery)->count();
+        $doneTasks = (clone $itemQuery)->where('status', 'done')->count();
+        $blockedTasks = (clone $itemQuery)->where('status', 'blocked')->count();
+        $completionRate = $totalTasks > 0 ? (int) round(($doneTasks / $totalTasks) * 100) : 0;
+
+        $weekStart = now()->copy()->startOfWeek();
+        $weekEnd = now()->copy()->endOfWeek();
+        $lastWeekStart = $weekStart->copy()->subWeek();
+        $lastWeekEnd = $weekEnd->copy()->subWeek();
+
+        $tasksThisWeek = (clone $itemQuery)->whereBetween('created_at', [$weekStart, $weekEnd])->count();
+        $tasksLastWeek = (clone $itemQuery)->whereBetween('created_at', [$lastWeekStart, $lastWeekEnd])->count();
+        $weeklyDelta = $tasksLastWeek > 0
+            ? (int) round((($tasksThisWeek - $tasksLastWeek) / $tasksLastWeek) * 100)
+            : ($tasksThisWeek > 0 ? 100 : 0);
+
+        $tasksDueThisWeek = (clone $itemQuery)
+            ->whereNotNull('deadline')
+            ->whereBetween('deadline', [$weekStart->toDateString(), $weekEnd->toDateString()])
+            ->count();
+
+        $boardsPreview = (clone $boardQuery)->withCount('items')->take(5)->get();
+        
+        $urgentTasks = (clone $itemQuery)
+            ->where(function ($query) {
+                $query->where('status', 'blocked')
+                    ->orWhere('priority', 'critique')
+                    ->orWhere(function ($sub) {
+                        $sub->whereNotNull('deadline')
+                            ->whereDate('deadline', '<=', now()->addDays(3)->toDateString())
+                            ->where('status', '!=', 'done');
+                    });
+            })
+            ->with('group.board')
+            ->orderByRaw("case when status = 'blocked' then 0 when priority = 'critique' then 1 else 2 end")
+            ->orderBy('deadline')
+            ->take(6)
+            ->get();
+
+        $recentItems = (clone $itemQuery)
+            ->with('group.board')
+            ->latest('updated_at')
+            ->take(4)
+            ->get()
+            ->map(fn ($item) => [
+                'title' => $item->name,
+                'subtitle' => ($item->group->board->name ?? 'Board') . ' / ' . ($item->group->name ?? 'Groupe'),
+                'time' => $item->updated_at,
+                'badge' => match ($item->status) {
+                    'done' => 'Achevé',
+                    'progress' => 'En cours',
+                    'blocked' => 'Bloqué',
+                    'ongoing' => 'Continu',
+                    default => 'Non commencé',
+                },
+            ]);
+
+        $recentMeetings = Meeting::query()
+            ->where('user_id', $user?->id)
+            ->latest('date')
+            ->take(3)
+            ->get()
+            ->map(fn ($meeting) => [
+                'title' => $meeting->title,
+                'subtitle' => 'Réunion',
+                'time' => $meeting->updated_at ?? $meeting->created_at,
+                'badge' => 'Meeting',
+            ]);
+
+        $recentActivity = $recentItems
+            ->concat($recentMeetings)
+            ->sortByDesc('time')
+            ->take(6)
+            ->values();
+
+        $members = collect([$this->workspace?->owner])
+            ->merge($this->workspace?->members ?? collect())
+            ->filter()
+            ->unique('id')
+            ->take(5)
+            ->values();
+
+        return view('livewire.dashboard', [
+            'completionRate' => $completionRate,
+            'doneTasks' => $doneTasks,
+            'totalTasks' => $totalTasks,
+            'tasksThisWeek' => $tasksThisWeek,
+            'weeklyDelta' => $weeklyDelta,
+            'activeBoards' => $activeBoards,
+            'tasksDueThisWeek' => $tasksDueThisWeek,
+            'recentActivity' => $recentActivity,
+            'boardsPreview' => $boardsPreview,
+            'urgentTasks' => $urgentTasks,
+            'blockedTasks' => $blockedTasks,
+            'members' => $members,
+            'workspace' => $this->workspace,
+        ]);
+    }
+}

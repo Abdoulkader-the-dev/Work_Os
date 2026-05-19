@@ -12,6 +12,51 @@ Le projet a déjà une base fonctionnelle solide sur les 3 couches: frontend, ba
 
 ---
 
+## 🏗️ Architecture du Projet
+
+Ce projet suit l'architecture MVC (Modèle-Vue-Contrôleur) classique de Laravel, enrichie avec **Livewire** pour la réactivité frontend sans JavaScript lourd, et **Alpine.js** pour les interactions UI légères. 
+
+### 📂 Structure des Dossiers & Fichiers
+
+- **`app/`** : C'est le cœur de l'application backend.
+  - **`Models/`** : Définit la structure des données et les relations (ex: `User`, `Workspace`, `Board`, `Group`, `Item`, `Meeting`, `Notification`, `Comment`).
+    - *Logique* : Un `Workspace` contient des `User` (membres) et des `Board`. Un `Board` contient des `Group`, qui contiennent des `Item` (tâches).
+  - **`Livewire/`** : Contient les contrôleurs des composants réactifs (ex: `Boards/BoardTable`, `BoardKanban`, `BoardCalendar`).
+    - *Interaction* : Ces fichiers PHP gèrent l'état de la vue en temps réel. Ils interceptent les actions de l'utilisateur sur la page et mettent à jour le HTML de manière dynamique sans rechargement.
+  - **`Http/Controllers/`** : Contrôleurs classiques pour les vues non-Livewire (ex: `ProfileController` pour la gestion du profil utilisateur).
+  - **`Http/Requests/`** : Classes de validation des formulaires (ex: `BoardStoreRequest`, `BoardUpdateRequest`) qui sécurisent les données entrantes.
+  - **`Events/`** : Événements diffusés via Laravel Echo (ex: `BoardUpdated`), permettant de mettre à jour le frontend en temps réel via WebSockets.
+
+- **`routes/`** : 
+  - **`web.php`** : Définit toutes les URLs de l'application. Associe une URL (ex: `/boards`) à une vue Blade ou à un composant Livewire. Gère également le middleware `auth` pour bloquer les utilisateurs non connectés.
+
+- **`resources/`** : 
+  - **`views/`** : Fichiers `.blade.php` responsables de l'affichage HTML.
+    - **`pages/`** : Les vues principales (Dashboard, Calendrier, Meetings).
+    - **`livewire/`** : Les templates associés aux composants de `app/Livewire/`.
+    - **`components/` & `layouts/`** : Éléments réutilisables (Topbars, sidebars, modales).
+  - **`css/` & `js/`** : Contiennent le style Tailwind CSS et les scripts d'initialisation (notamment Alpine.js et Laravel Echo). L'entrée principale est `app.js`.
+
+- **`database/`** :
+  - **`migrations/`** : Fichiers PHP qui créent et modifient les tables de la base de données (le schéma relationnel).
+  - **`seeders/` & `factories/`** : Scripts pour générer de fausses données (mocks) très utiles pour le développement et tester l'UI.
+
+- **`public/`** : Dossier exposé au web, contenant l'`index.php` (point d'entrée) et les assets compilés (via Vite).
+
+### ⚙️ Logique et Flux de Données
+
+1. **Requête Utilisateur** : L'utilisateur navigue vers une URL (ex: `/boards/{board}`). 
+2. **Routage (`web.php`)** : Laravel intercepte l'URL et appelle le composant Livewire `BoardTable::class`.
+3. **Logique Backend (`app/Livewire/Boards/BoardTable.php`)** : Le composant récupère le board, ses groupes et ses tâches (`Item`) via les modèles Éloquent correspondants.
+4. **Rendu Frontend (`resources/views/livewire/boards/board-table.blade.php`)** : Le composant génère le HTML en utilisant les directives Blade.
+5. **Interactions UI (`Alpine.js`)** : Les modales (ex: création de tâche), les dropdowns, et les panneaux latéraux (sidepanels) s'ouvrent ou se ferment instantanément sans appel serveur grâce à des directives `x-data`, `x-show`.
+6. **Soumission de Formulaire / Action** : Lorsqu'une tâche est modifiée :
+   - Si c'est en Livewire, la méthode PHP correspondante est appelée.
+   - Si c'est une route standard (ex: `POST /boards/{board}/items`), le contrôleur dans `web.php` valide la requête, met à jour la base de données, et dispatche l'événement `BoardUpdated`.
+7. **Temps Réel (`Laravel Echo`)** : Si un autre utilisateur est sur le même board, Laravel Echo écoute l'événement `BoardUpdated` via WebSockets (Reverb/Pusher) et met à jour son interface instantanément.
+
+---
+
 ## ✅ Ce qui a été fait
 
 ### 🎨 Frontend

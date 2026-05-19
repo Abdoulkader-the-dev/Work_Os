@@ -19,6 +19,7 @@ class Notifications extends Component
         $userId = auth()->id();
         return [
             "echo-private:users.{$userId},NotificationSent" => 'refreshNotifications',
+            'notifications-updated' => 'refreshNotifications',
         ];
     }
 

@@ -3,7 +3,7 @@
 @section('page-title', 'Réunions')
 
 @section('topbar-action')
-    <a href="{{ route('meetings.create') }}" class="btn-primary">
+    <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
@@ -14,33 +14,33 @@
 <div style="display:flex;flex-direction:column;gap:20px;">
 
     {{-- ── TOOLBAR ── --}}
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="flex-between flex-wrap" style="gap:12px;">
 
         {{-- Search --}}
-        <div style="display:flex;align-items:center;gap:8px;background:white;border:1px solid var(--border);border-radius:8px;padding:8px 12px;flex:1;min-width:220px;max-width:360px;transition:border-color .15s;"
-             onfocusin="this.style.borderColor='var(--blue)'" onfocusout="this.style.borderColor='var(--border)'">
+        <div class="search-box" style="flex:1;min-width:220px;max-width:360px;">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-3);flex-shrink:0;">
                 <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/>
                 <path d="M9.5 9.5L13 13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
             </svg>
             <input type="text"
                    wire:model.live.debounce.300ms="search"
-                   placeholder="Rechercher un CR..."
-                   style="border:none;background:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-1);width:100%;">
+                   placeholder="Rechercher un CR...">
         </div>
 
         {{-- Sort --}}
-        <div style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2);">
-            <span style="font-size:12px;color:var(--text-3);">Trier par</span>
+        <div class="flex-center" style="gap:6px;">
+            <span class="text-xs text-3">Trier par</span>
             <button wire:click="sortBy('date')"
-                    style="padding:6px 12px;border-radius:6px;border:1px solid {{ $sortField === 'date' ? 'var(--blue)' : 'var(--border)' }};background:{{ $sortField === 'date' ? 'var(--blue-light)' : 'white' }};color:{{ $sortField === 'date' ? 'var(--blue)' : 'var(--text-2)' }};font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;">
+                    class="view-btn {{ $sortField === 'date' ? 'active' : '' }}"
+                    style="border:1px solid {{ $sortField === 'date' ? 'var(--blue)' : 'var(--border)' }};">
                 Date
                 @if($sortField === 'date')
                     {{ $sortDir === 'asc' ? '↑' : '↓' }}
                 @endif
             </button>
             <button wire:click="sortBy('title')"
-                    style="padding:6px 12px;border-radius:6px;border:1px solid {{ $sortField === 'title' ? 'var(--blue)' : 'var(--border)' }};background:{{ $sortField === 'title' ? 'var(--blue-light)' : 'white' }};color:{{ $sortField === 'title' ? 'var(--blue)' : 'var(--text-2)' }};font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;">
+                    class="view-btn {{ $sortField === 'title' ? 'active' : '' }}"
+                    style="border:1px solid {{ $sortField === 'title' ? 'var(--blue)' : 'var(--border)' }};">
                 Titre
                 @if($sortField === 'title')
                     {{ $sortDir === 'asc' ? '↑' : '↓' }}
@@ -49,7 +49,7 @@
         </div>
 
         {{-- Count --}}
-        <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-3);margin-left:auto;">
+        <span class="text-xs text-3 f-mono" style="margin-left:auto;">
             {{ $meetings->total() }} CR
         </span>
     </div>
@@ -58,12 +58,12 @@
     @if($meetings->isEmpty())
         <div style="text-align:center;padding:64px 24px;">
             <div style="font-size:40px;margin-bottom:12px;">📋</div>
-            <div style="font-size:16px;font-weight:600;letter-spacing:-0.01em;margin-bottom:6px;">Aucun compte rendu</div>
-            <div style="font-size:13px;color:var(--text-3);margin-bottom:20px;">
+            <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucun compte rendu</div>
+            <div class="text-sm text-3" style="margin-bottom:20px;">
                 {{ $search ? 'Aucun résultat pour "' . $search . '"' : 'Créez votre premier CR de réunion.' }}
             </div>
             @if(!$search)
-                <a href="{{ route('meetings.create') }}" class="btn-primary" style="display:inline-flex;">
+                <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate>
                     + Nouveau CR
                 </a>
             @endif
@@ -71,17 +71,18 @@
     @else
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
             @foreach($meetings as $meeting)
-                <div class="bento-card" style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+                <div class="bento-card" style="padding:20px;display:flex;flex-direction:column;gap:14px;" wire:key="meeting-{{ $meeting->id }}">
 
                     {{-- Header card --}}
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                    <div class="flex-between" style="align-items:flex-start;gap:10px;">
                         <div style="flex:1;min-width:0;">
-                            <a href="{{ route('meetings.show', $meeting) }}"
-                               style="font-size:15px;font-weight:600;letter-spacing:-0.015em;color:var(--text-1);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;"
-                               onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--text-1)'">
+                            <a href="{{ route('meetings.show', $meeting) }}" wire:navigate
+                               class="text-md font-semibold text-1"
+                               style="text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s;"
+                               onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color=''">
                                 {{ $meeting->title }}
                             </a>
-                            <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);margin-top:4px;">
+                            <div class="text-xs text-3 f-mono" style="margin-top:4px;">
                                 {{ $meeting->date->isoFormat('ddd D MMM YYYY') }}
                             </div>
                         </div>
@@ -89,22 +90,22 @@
                         {{-- Menu ··· --}}
                         <div style="position:relative;flex-shrink:0;">
                             <button type="button"
+                                    class="icon-btn"
                                     data-dropdown-trigger="meeting-menu-{{ $meeting->id }}"
                                     aria-controls="meeting-menu-{{ $meeting->id }}"
                                     aria-expanded="false"
-                                    style="width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;border:none;background:none;cursor:pointer;font-size:16px;color:var(--text-3);transition:background .12s;"
-                                    onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">···</button>
+                                    style="width:28px;height:28px;border:none;background:none;">···</button>
                             <div id="meeting-menu-{{ $meeting->id }}"
                                  data-dropdown-menu
                                  hidden
                                  style="position:absolute;right:0;top:calc(100%+4px);background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:150px;z-index:40;">
-                                <a href="{{ route('meetings.show', $meeting) }}"
+                                <a href="{{ route('meetings.show', $meeting) }}" wire:navigate
                                    style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:var(--text-2);text-decoration:none;transition:background .12s;"
                                    onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/></svg>
                                     Voir
                                 </a>
-                                <a href="{{ route('meetings.edit', $meeting) }}"
+                                <a href="{{ route('meetings.edit', $meeting) }}" wire:navigate
                                    style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;color:var(--text-2);text-decoration:none;transition:background .12s;"
                                    onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8.5 2.5l1 1L4 9H3V8l5.5-5.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -126,12 +127,12 @@
                     @if(!empty($meeting->attendees))
                         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                             @foreach(array_slice($meeting->attendees, 0, 4) as $attendee)
-                                <span style="font-size:11px;padding:2px 8px;background:var(--bg);border-radius:20px;color:var(--text-2);">
+                                <span class="badge" style="background:var(--bg);color:var(--text-2);">
                                     {{ $attendee }}
                                 </span>
                             @endforeach
                             @if(count($meeting->attendees) > 4)
-                                <span style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;">
+                                <span class="text-xs text-3 f-mono">
                                     +{{ count($meeting->attendees) - 4 }}
                                 </span>
                             @endif
@@ -146,11 +147,11 @@
                     @endphp
                     @if($totalAct > 0)
                         <div>
-                            <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                                <span style="font-size:11px;color:var(--text-3);">
+                            <div class="flex-between" style="margin-bottom:5px;">
+                                <span class="text-xs text-3">
                                     {{ $converted }}/{{ $totalAct }} actions converties
                                 </span>
-                                <span style="font-size:11px;font-family:'DM Mono',monospace;color:{{ $converted === $totalAct ? '#16a34a' : 'var(--text-3)' }};">
+                                <span class="text-xs f-mono" style="color:{{ $converted === $totalAct ? '#16a34a' : 'var(--text-3)' }};">
                                     {{ $totalAct > 0 ? round($converted / $totalAct * 100) : 0 }}%
                                 </span>
                             </div>
@@ -161,19 +162,19 @@
                     @endif
 
                     {{-- Footer card --}}
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid var(--border);">
+                    <div class="flex-between" style="padding-top:10px;border-top:1px solid var(--border);">
                         <div style="display:flex;gap:12px;">
-                            <span style="font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px;">
+                            <span class="text-xs text-3" style="display:flex;align-items:center;gap:4px;">
                                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 5.5l2.5 2.5L10 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                                 {{ count($meeting->bilan ?? []) }} bilans
                             </span>
-                            <span style="font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:4px;">
+                            <span class="text-xs text-3" style="display:flex;align-items:center;gap:4px;">
                                 <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.1"/><path d="M3.5 5.5h4M5.5 3.5v4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
                                 {{ $totalAct }} actions
                             </span>
                         </div>
-                        <a href="{{ route('meetings.show', $meeting) }}"
-                           style="font-size:12px;font-weight:500;color:var(--blue);text-decoration:none;display:flex;align-items:center;gap:3px;transition:gap .15s;"
+                        <a href="{{ route('meetings.show', $meeting) }}" wire:navigate
+                           class="text-sm font-medium" style="color:var(--blue);text-decoration:none;display:flex;align-items:center;gap:3px;transition:gap .15s;"
                            onmouseover="this.style.gap='6px'" onmouseout="this.style.gap='3px'">
                             Ouvrir <span>→</span>
                         </a>
@@ -184,7 +185,7 @@
 
         {{-- Pagination --}}
         @if($meetings->hasPages())
-            <div style="display:flex;justify-content:center;padding-top:8px;">
+            <div class="flex-center" style="padding-top:8px;">
                 {{ $meetings->links() }}
             </div>
         @endif
