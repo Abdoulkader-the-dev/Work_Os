@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Events\BoardUpdated;
 use App\Http\Requests\BoardStoreRequest;
@@ -12,6 +13,7 @@ use App\Livewire\Boards\BoardKanban;
 use App\Livewire\Boards\BoardCalendar;
 use App\Models\Board;
 use App\Models\Notification;
+use App\Models\Workspace;
 
 // Racine → dashboard
 Route::get('/', fn() => redirect()->route('dashboard'));
@@ -20,6 +22,45 @@ Route::get('/', fn() => redirect()->route('dashboard'));
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard', fn() => view('pages.dashboard'))->name('dashboard');
+
+    // Workspaces
+    Route::post('/workspaces', function (Request $request) {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ], [
+            'name.required' => 'Le nom est requis.',
+        ]);
+
+        $workspace = DB::transaction(function () use ($request, $data) {
+            $workspace = Workspace::create([
+                'name' => trim($data['name']),
+                'user_id' => $request->user()->id,
+                'color' => '#0091CD',
+            ]);
+
+            $request->user()->workspaces()->syncWithoutDetaching([
+                $workspace->id => ['role' => 'admin'],
+            ]);
+
+            $request->user()->forceFill([
+                'current_workspace_id' => $workspace->id,
+            ])->save();
+
+            return $workspace;
+        });
+
+        return redirect()->route('dashboard')->with('status', 'workspace-created');
+    })->name('workspaces.store');
+
+    Route::post('/workspaces/{workspace}/switch', function (Request $request, Workspace $workspace) {
+        abort_unless($request->user()->workspaces()->whereKey($workspace->id)->exists(), 403);
+
+        $request->user()->forceFill([
+            'current_workspace_id' => $workspace->id,
+        ])->save();
+
+        return redirect()->route('dashboard')->with('status', 'workspace-switched');
+    })->name('workspaces.switch');
 
     // Boards
     Route::get('/boards', fn() => view('pages.boards'))->name('boards.index');

@@ -1,11 +1,24 @@
 <div style="display:flex;flex-direction:column;gap:18px;">
+    <div wire:loading.flex style="align-items:center;gap:8px;color:var(--text-3);font-size:13px;">
+        <svg class="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="16" stroke-linecap="round" opacity=".35"/>
+            <path d="M7 2a5 5 0 015 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Chargement des tâches...
+    </div>
+
     <div class="flex-between flex-wrap" style="gap:12px;">
         <div class="text-xs text-3 f-mono">
             {{ $items->count() }} tâche{{ $items->count() > 1 ? 's' : '' }}
         </div>
     </div>
 
-    @if($items->isEmpty())
+    @if(!$workspace)
+        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
+            <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucun workspace actif</div>
+            <div class="text-sm">Créez ou sélectionnez un workspace pour voir vos tâches.</div>
+        </div>
+    @elseif($items->isEmpty())
         <div style="text-align:center;padding:72px 24px;color:var(--text-3);">
             <div style="font-size:40px;margin-bottom:12px;">🗂️</div>
             <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucune tâche assignée</div>

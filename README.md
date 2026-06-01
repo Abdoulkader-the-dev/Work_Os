@@ -1,166 +1,459 @@
-# 🚀 UniPod-To-Do-List (En cours de développement 🚧)
+# UniPod To-Do List
 
-> **⚠️ AVERTISSEMENT : Ce projet est actuellement en cours de développement et n'est pas encore terminé.**
+Application web de gestion de tâches, de projets et de réunions.
 
-UniPod-To-Do-List est une application de gestion de tâches et de projets conçue pour offrir une interface moderne, réactive et fluide.
+Ce projet sert à organiser le travail d’une équipe dans un même espace partagé. On peut y créer des espaces de travail, des tableaux de suivi, des groupes de tâches, des tâches détaillées, des réunions et des notifications.
 
----
-
-## 📊 État Global
-
-Le projet a déjà une base fonctionnelle solide sur les 3 couches: frontend, backend et base de données. Les boards, tâches, groupes, meetings, notifications et vues principales existent, avec une bonne partie du flux produit déjà branchée. Le travail récent a surtout consolidé la cohérence entre les vues, sécurisé le backend, et rendu plusieurs écrans réellement dynamiques.
+L’objectif est simple: permettre à plusieurs personnes de voir le même projet, de comprendre quoi faire, qui fait quoi, et où en est le travail, sans devoir jongler entre plusieurs outils.
 
 ---
 
-## 🏗️ Architecture du Projet
+## Ce que fait l’application, en langage simple
 
-Ce projet suit l'architecture MVC (Modèle-Vue-Contrôleur) classique de Laravel, enrichie avec **Livewire** pour la réactivité frontend sans JavaScript lourd, et **Alpine.js** pour les interactions UI légères. 
+L’application fonctionne comme un bureau partagé pour une équipe.
 
-### 📂 Structure des Dossiers & Fichiers
+Un utilisateur arrive dans un espace de travail. Dans cet espace, il peut:
+- voir les projets en cours,
+- créer ou modifier des tableaux de suivi,
+- découper un projet en groupes,
+- ajouter des tâches,
+- affecter des personnes à une tâche,
+- suivre les échéances,
+- consulter les réunions,
+- recevoir des notifications.
 
-- **`app/`** : C'est le cœur de l'application backend.
-  - **`Models/`** : Définit la structure des données et les relations (ex: `User`, `Workspace`, `Board`, `Group`, `Item`, `Meeting`, `Notification`, `Comment`).
-    - *Logique* : Un `Workspace` contient des `User` (membres) et des `Board`. Un `Board` contient des `Group`, qui contiennent des `Item` (tâches).
-  - **`Livewire/`** : Contient les contrôleurs des composants réactifs (ex: `Boards/BoardTable`, `BoardKanban`, `BoardCalendar`).
-    - *Interaction* : Ces fichiers PHP gèrent l'état de la vue en temps réel. Ils interceptent les actions de l'utilisateur sur la page et mettent à jour le HTML de manière dynamique sans rechargement.
-  - **`Http/Controllers/`** : Contrôleurs classiques pour les vues non-Livewire (ex: `ProfileController` pour la gestion du profil utilisateur).
-  - **`Http/Requests/`** : Classes de validation des formulaires (ex: `BoardStoreRequest`, `BoardUpdateRequest`) qui sécurisent les données entrantes.
-  - **`Events/`** : Événements diffusés via Laravel Echo (ex: `BoardUpdated`), permettant de mettre à jour le frontend en temps réel via WebSockets.
-
-- **`routes/`** : 
-  - **`web.php`** : Définit toutes les URLs de l'application. Associe une URL (ex: `/boards`) à une vue Blade ou à un composant Livewire. Gère également le middleware `auth` pour bloquer les utilisateurs non connectés.
-
-- **`resources/`** : 
-  - **`views/`** : Fichiers `.blade.php` responsables de l'affichage HTML.
-    - **`pages/`** : Les vues principales (Dashboard, Calendrier, Meetings).
-    - **`livewire/`** : Les templates associés aux composants de `app/Livewire/`.
-    - **`components/` & `layouts/`** : Éléments réutilisables (Topbars, sidebars, modales).
-  - **`css/` & `js/`** : Contiennent le style Tailwind CSS et les scripts d'initialisation (notamment Alpine.js et Laravel Echo). L'entrée principale est `app.js`.
-
-- **`database/`** :
-  - **`migrations/`** : Fichiers PHP qui créent et modifient les tables de la base de données (le schéma relationnel).
-  - **`seeders/` & `factories/`** : Scripts pour générer de fausses données (mocks) très utiles pour le développement et tester l'UI.
-
-- **`public/`** : Dossier exposé au web, contenant l'`index.php` (point d'entrée) et les assets compilés (via Vite).
-
-### ⚙️ Logique et Flux de Données
-
-1. **Requête Utilisateur** : L'utilisateur navigue vers une URL (ex: `/boards/{board}`). 
-2. **Routage (`web.php`)** : Laravel intercepte l'URL et appelle le composant Livewire `BoardTable::class`.
-3. **Logique Backend (`app/Livewire/Boards/BoardTable.php`)** : Le composant récupère le board, ses groupes et ses tâches (`Item`) via les modèles Éloquent correspondants.
-4. **Rendu Frontend (`resources/views/livewire/boards/board-table.blade.php`)** : Le composant génère le HTML en utilisant les directives Blade.
-5. **Interactions UI (`Alpine.js`)** : Les modales (ex: création de tâche), les dropdowns, et les panneaux latéraux (sidepanels) s'ouvrent ou se ferment instantanément sans appel serveur grâce à des directives `x-data`, `x-show`.
-6. **Soumission de Formulaire / Action** : Lorsqu'une tâche est modifiée :
-   - Si c'est en Livewire, la méthode PHP correspondante est appelée.
-   - Si c'est une route standard (ex: `POST /boards/{board}/items`), le contrôleur dans `web.php` valide la requête, met à jour la base de données, et dispatche l'événement `BoardUpdated`.
-7. **Temps Réel (`Laravel Echo`)** : Si un autre utilisateur est sur le même board, Laravel Echo écoute l'événement `BoardUpdated` via WebSockets (Reverb/Pusher) et met à jour son interface instantanément.
+Quand quelqu’un modifie une tâche ou un tableau, les autres membres peuvent voir la mise à jour sans tout recharger, grâce à des mises à jour dynamiques.
 
 ---
 
-## ✅ Ce qui a été fait
+## Les grandes briques du projet
 
-### 🎨 Frontend
+### 1. L’espace de travail
 
-- **Vues boards opérationnelles :**
-    - Tableau, Kanban, Calendrier board sont branchés aux vraies données.
-    - Ajout de tâche unifié entre les 3 vues.
-    - Ajout de groupe fonctionnel.
-    - Panneau latéral de tâche fonctionnel.
-- **Dashboard et onglets principaux dynamisés :**
-    - Dashboard avec état vide (Empty State) personnalisé pour les nouveaux utilisateurs.
-    - Calendrier, Rapports, Membres, Notifications, Paramètres.
-- **UI/UX & Feedback visuel :**
-    - **Barre de progression globale** : Ajout d'une barre de chargement en haut de page lors des transitions `wire:navigate`.
-    - **États de chargement** : Spinners et indicateurs visuels ajoutés sur les actions critiques (création/switch de workspace).
-    - Transitions Alpine sur le panneau tâche.
-    - Transitions sur le dropdown notifications.
-    - Animation du modal de création board.
-    - Gestion `x-cloak` pour éviter les flashes.
-- **Texte riche :**
-    - Trix intégré pour la description des tâches.
-    - Trix intégré pour les commentaires.
-    - Trix intégré dans le formulaire de création de tâche.
-- **Gestion board côté UI :**
-    - Création, modification, suppression.
-    - Contrôle d’affichage selon permissions.
+L’espace de travail est le conteneur principal.
 
-### ⚙️ Backend
+Il regroupe:
+- les personnes qui participent au projet,
+- les tableaux,
+- les tâches,
+- les réunions,
+- les notifications.
 
-- **Gestion des Workspaces :**
-    - Création et switch de workspace avec redirection automatique vers le dashboard.
-    - Logique de "Workspace actif" persistante en base de données.
-    - Rafraîchissement automatique de l'état utilisateur après modifications.
-- **CRUD partiellement finalisé :**
-    - Board : create, read, update, delete disponibles.
-    - Group : create, update partiel, delete.
-    - Item : create, update, delete, bulk update, move en kanban.
-    - Meeting : create, read, update, delete via Livewire.
-- **Validation :**
-    - `BoardStoreRequest`
-    - `BoardUpdateRequest`
-    - Validations renforcées dans plusieurs composants Livewire : `BoardTable`, `BoardKanban`, `BoardCalendar`.
-- **Temps réel :**
-    - Temps réel branché sur les vues board via Echo.
-    - Notifications instantanées minimales sur assignation / mention.
+Chaque utilisateur peut avoir un espace courant. C’est l’espace qu’il voit en priorité lorsqu’il se connecte.
 
-### 🗄️ Base de données
+### 2. Les tableaux
 
-- **Schéma principal déjà présent :**
-    - `users`, `workspaces`, `workspace_user`, `boards`, `groups`, `items`, `item_user`, `comments`, `meetings`, `notifications`.
-- **Évolution récente :**
-    - Ajout de description sur les items.
-- **Seed cohérent :**
-    - `users`, `workspace`, rôles, `boards`, `groupes`, `tâches`, `meetings`. (Seeders plus avancés à faire).
-- **Search globale topbar :**
-    - Actuellement vraie recherche transverse.
-- **Notifications :**
-    - Meilleure granularité visuelle (redirection vers vues lourdes en inline styles qui méritent une harmonisation CSS).
-    - Certains dropdowns utilisent encore plusieurs patterns différents.
+Un tableau représente un projet ou un chantier.
 
----
+Exemples:
+- un challenge,
+- un site web,
+- une partie administrative.
 
-## 📝 Ce qu'il reste à faire (To-Do List du Projet)
+Chaque tableau possède:
+- un nom,
+- une couleur,
+- un espace de travail parent.
 
-### ⚙️ Backend
+Un tableau peut être consulté sous plusieurs formes:
+- vue tableau,
+- vue Kanban,
+- vue calendrier.
 
-- **CRUD encore à finaliser complètement pour toutes les entités :**
-    - **Board :** Manque probablement des tests dédiés d’update/delete.
-    - **Group :** Pas encore de Form Request dédiée, pas encore de routes REST complètes.
-    - **Item :** Pas encore de Form Request dédiée, logique encore répartie entre route closure + Livewire.
-    - **Meeting :** Validation encore inline dans Livewire, pas externalisée.
-- **Validation avancée :**
-    - Créer des objets dédiés pour : `GroupStore/UpdateRequest`, `ItemStore/UpdateRequest`, `MeetingStore/UpdateRequest`.
-    - Centraliser certaines regex/règles métier.
-- **Autorisations :**
-    - Rôle reader prévu conceptuellement, mais pas encore complètement déroulé dans seed + UI + tests.
-    - Pas encore de policy explicite pour `Item`, `Group`, `Comment`, `Notification`.
-- **Temps réel :**
-    - Le code est prêt, mais l’environnement tourne encore sur broadcasting = log.
-    - Il faut activer réellement : soit Laravel Reverb, soit Pusher.
-    - Il faut ensuite tester le flux temps réel en conditions réelles.
-- **Architecture :**
-    - Plusieurs routes utilisent encore des closures.
-    - Une partie de la logique métier gagnerait à être déplacée vers : controllers, actions/services, form requests, notifications Laravel natives.
-- **Tests :**
-    - Pas encore de couverture solide sur : policies, rôles admin/member/reader, update/delete boards/groups/items/meetings, broadcasting / notifications temps réel.
+### 3. Les groupes
 
-### 🗄️ Base de données
+Un groupe sert à découper un tableau en sous-parties logiques.
 
-- **À améliorer :**
-    - Ajouter éventuellement des contraintes plus strictes sur certains champs métier.
-    - Vérifier les index utiles si la volumétrie augmente.
-    - Potentiellement normaliser davantage certaines structures JSON de meetings si besoin d’analytics avancée.
-- **Temps réel / notifications :**
-    - Si montée en charge, il faudra penser aux files (queues), aux workers, et à la persistance associée.
+Exemples:
+- cadrage,
+- développement,
+- livraison.
+
+Les groupes aident à organiser les tâches par phase, par équipe ou par thème.
+
+### 4. Les tâches
+
+Une tâche est l’unité de travail concrète.
+
+Une tâche peut contenir:
+- un titre,
+- un statut,
+- une priorité,
+- une date limite,
+- une description riche,
+- un livrable attendu,
+- des obstacles,
+- un ordre d’affichage.
+
+Une tâche peut être assignée à une ou plusieurs personnes.
+
+### 5. Les réunions
+
+Les réunions permettent de garder une trace des points d’équipe.
+
+On y stocke:
+- le titre,
+- la date,
+- les participants,
+- le bilan,
+- les recommandations,
+- les actions à faire.
+
+### 6. Les notifications
+
+Les notifications informent un utilisateur qu’il s’est passé quelque chose d’important:
+- une mention,
+- une assignation,
+- une échéance,
+- un commentaire,
+- un changement de statut.
 
 ---
 
-## 🚀 Recommandation de suite
+## Qui fait quoi dans le projet
 
-L’ordre le plus logique maintenant est :
+### Le navigateur de l’utilisateur
 
-1. Ajouter les tests d’autorisation admin / member / reader.
-2. Créer les Form Requests pour Group, Item, Meeting.
-3. Sortir la logique métier des closures/routes vers des controllers ou services.
-4. Activer réellement Reverb ou Pusher.
-5. Finir le polish UI restant.
+Le navigateur affiche l’application, envoie les clics, les formulaires et les actions de l’utilisateur, puis reçoit les résultats à afficher.
+
+### Laravel
+
+Laravel est le moteur principal du projet.
+
+Il s’occupe de:
+- recevoir les demandes de l’utilisateur,
+- vérifier qu’il est connecté,
+- contrôler ses droits,
+- lire et écrire en base de données,
+- renvoyer la bonne page ou la bonne réponse.
+
+### Les modèles
+
+Les modèles représentent les objets métier.
+
+Ils servent à dire à l’application:
+- ce qu’est un utilisateur,
+- ce qu’est un espace de travail,
+- ce qu’est un tableau,
+- ce qu’est un groupe,
+- ce qu’est une tâche,
+- ce qu’est une réunion,
+- ce qu’est une notification.
+
+Ils décrivent aussi les liens entre ces objets.
+
+### Les routes
+
+Les routes sont les portes d’entrée de l’application.
+
+Elles répondent à des adresses comme:
+- `/dashboard`
+- `/boards`
+- `/boards/{board}`
+- `/meetings`
+
+Une route dit à Laravel quoi faire quand l’utilisateur va sur une page ou clique sur une action.
+
+### Les composants Livewire
+
+Livewire gère les parties interactives de l’interface.
+
+Il permet de:
+- modifier une vue sans recharger toute la page,
+- ouvrir et fermer des panneaux,
+- déplacer ou mettre à jour des tâches,
+- rafraîchir certaines parties de l’écran en direct.
+
+### Alpine.js
+
+Alpine.js gère les petites interactions visuelles:
+- ouvrir une modale,
+- afficher un menu,
+- animer un panneau,
+- cacher un élément au chargement,
+- faire des transitions rapides.
+
+### Les vues Blade
+
+Les vues Blade sont les fichiers qui construisent l’interface HTML.
+
+Elles définissent:
+- les écrans,
+- les composants visuels,
+- les formulaires,
+- les listes,
+- les modales,
+- les blocs réutilisables.
+
+### La base de données
+
+La base de données garde les informations de façon persistante.
+
+Elle conserve:
+- les comptes utilisateurs,
+- les espaces de travail,
+- les tableaux,
+- les groupes,
+- les tâches,
+- les commentaires,
+- les réunions,
+- les notifications.
+
+---
+
+## Comment tout s’enchaîne pour produire un résultat
+
+Voici le parcours d’une action, expliqué simplement.
+
+### Exemple: créer une tâche
+
+1. L’utilisateur remplit un formulaire.
+2. Le navigateur envoie les données.
+3. Laravel reçoit la demande.
+4. Laravel vérifie que les données sont valides.
+5. Laravel vérifie que l’utilisateur a le droit de faire l’action.
+6. Laravel choisit le bon groupe ou en crée un si nécessaire.
+7. Laravel enregistre la tâche en base de données.
+8. Laravel déclenche un événement pour prévenir les autres parties de l’application.
+9. L’interface se met à jour.
+10. L’utilisateur voit immédiatement le résultat.
+
+### Exemple: déplacer une tâche dans Kanban
+
+1. L’utilisateur glisse une tâche vers une autre colonne.
+2. Livewire capture l’action.
+3. Laravel met à jour le statut ou l’ordre de la tâche.
+4. La base de données est modifiée.
+5. L’interface affiche la nouvelle position.
+6. Si le temps réel est actif, les autres utilisateurs voient aussi la mise à jour.
+
+### Exemple: changer de workspace
+
+1. L’utilisateur choisit un autre espace de travail.
+2. Laravel vérifie qu’il a accès à cet espace.
+3. Laravel enregistre ce nouvel espace comme espace courant.
+4. L’utilisateur est renvoyé vers le tableau de bord.
+5. Toute l’interface affiche le contexte du nouvel espace.
+
+---
+
+## Structure du projet
+
+### `app/`
+
+Contient la logique principale de l’application.
+
+- `Models/`: les objets métier et leurs relations.
+- `Livewire/`: les composants interactifs.
+- `Http/Controllers/`: les contrôleurs classiques.
+- `Http/Requests/`: les règles de validation des formulaires.
+- `Events/`: les événements diffusés pour mettre à jour l’interface.
+- `Policies/`: les règles d’autorisation.
+
+### `routes/`
+
+Contient les routes de l’application.
+
+Le fichier principal est `web.php`. Il relie une adresse web à une action.
+
+### `resources/`
+
+Contient tout ce qui est affiché à l’écran.
+
+- `views/`: les pages et les composants Blade.
+- `css/`: les styles.
+- `js/`: les scripts JavaScript.
+
+### `database/`
+
+Contient la structure et les données de départ.
+
+- `migrations/`: création et évolution des tables.
+- `seeders/`: données de démonstration.
+- `factories/`: génération de fausses données pour les tests.
+
+### `public/`
+
+Contient le point d’entrée public de l’application et les assets compilés.
+
+---
+
+## Ce qui a déjà été fait
+
+### Frontend
+
+- Les vues principales des tableaux sont opérationnelles.
+- Les 3 vues de board sont branchées sur des vraies données:
+  - tableau,
+  - Kanban,
+  - calendrier.
+- L’ajout de tâche est unifié entre les différentes vues.
+- L’ajout de groupe fonctionne.
+- Le panneau latéral d’une tâche fonctionne.
+- Le dashboard affiche un état vide adapté aux nouveaux utilisateurs.
+- Les pages principales existent et sont reliées:
+  - calendrier,
+  - rapports,
+  - membres,
+  - notifications,
+  - paramètres.
+- Des animations et transitions ont déjà été ajoutées:
+  - barre de chargement en haut de page,
+  - animations de modales,
+  - transitions de panneaux,
+  - transitions de menus,
+  - gestion de `x-cloak`.
+- Trix est intégré pour:
+  - la description des tâches,
+  - les commentaires,
+  - certains formulaires de création.
+- L’interface gère déjà:
+  - la création de boards,
+  - la modification de boards,
+  - la suppression de boards,
+  - l’affichage selon les permissions.
+
+### Backend
+
+- Les workspaces peuvent être créés et changés.
+- Le workspace courant est mémorisé en base.
+- Les boards peuvent être:
+  - créés,
+  - consultés,
+  - modifiés,
+  - supprimés.
+- Les groupes peuvent être créés, modifiés partiellement et supprimés.
+- Les tâches peuvent être:
+  - créées,
+  - modifiées,
+  - supprimées,
+  - déplacées,
+  - mises à jour en masse.
+- Les réunions peuvent être gérées via Livewire.
+- Des règles de validation existent déjà pour les boards.
+- Le temps réel est branché sur les vues board.
+- Les notifications de base sont déjà en place.
+- Des policies existent pour:
+  - board,
+  - workspace,
+  - meeting.
+
+### Base de données
+
+- Le schéma principal existe déjà.
+- Les tables principales sont en place:
+  - `users`
+  - `workspaces`
+  - `workspace_user`
+  - `boards`
+  - `groups`
+  - `items`
+  - `item_user`
+  - `comments`
+  - `meetings`
+  - `notifications`
+- Les relations essentielles sont déjà définies.
+- Des données de démonstration existent déjà dans les seeders.
+- Les tâches ont déjà un champ de description.
+- Les réunions sont stockées avec des champs structurés en tableaux.
+
+---
+
+## Ce qu’il reste à faire
+
+### Frontend
+
+- Harmoniser encore l’interface sur certains écrans.
+- Unifier les patterns visuels de certains dropdowns et notifications.
+- Finir le polish UI des éléments encore incohérents.
+- Renforcer les retours visuels sur certaines actions.
+- Vérifier que toutes les pages gardent une expérience homogène sur desktop et mobile.
+
+### Backend
+
+- Extraire davantage de logique hors des closures dans `routes/web.php`.
+- Créer des `Form Request` dédiées pour:
+  - groups,
+  - items,
+  - meetings.
+- Compléter la validation de certaines actions métier.
+- Ajouter davantage de policies:
+  - item,
+  - group,
+  - comment,
+  - notification.
+- Finaliser la logique du rôle `reader` dans les droits, les seeders et l’interface.
+- Renforcer les tests sur:
+  - les permissions,
+  - les mises à jour,
+  - les suppressions,
+  - les notifications,
+  - le temps réel.
+- Activer réellement le broadcasting en environnement de production ou de test réaliste.
+
+### Base de données
+
+- Ajouter éventuellement des contraintes métier plus strictes.
+- Vérifier les index si la base grossit.
+- Renforcer la cohérence de certaines structures de données.
+- Prévoir la montée en charge:
+  - files de traitement,
+  - workers,
+  - persistance des événements si nécessaire.
+
+---
+
+## Lecture rapide du fonctionnement
+
+Si on résume très simplement:
+
+1. Une personne ouvre l’application.
+2. Elle entre dans un espace de travail.
+3. Elle consulte un tableau.
+4. Elle crée ou met à jour des groupes et des tâches.
+5. L’application enregistre ces changements en base.
+6. L’interface se met à jour.
+7. Les autres membres voient les changements.
+8. Les réunions et notifications gardent l’équipe informée.
+
+---
+
+## Stack technique
+
+- Laravel 13
+- Livewire 4
+- Alpine.js
+- Tailwind CSS
+- Vite
+- Trix
+- Laravel Echo
+- Pusher / Reverb prévu pour le temps réel
+
+---
+
+## Statut global
+
+Le projet est déjà bien avancé.
+
+Il possède une base fonctionnelle solide sur les 3 couches:
+- frontend,
+- backend,
+- base de données.
+
+Le produit est exploitable, mais il reste encore du travail pour:
+- rendre tout le code plus propre et plus homogène,
+- compléter les validations,
+- compléter les permissions,
+- finir la couverture de tests,
+- finaliser certaines parties de l’interface,
+- rendre le temps réel pleinement opérationnel.
+
+---
+
+## Ordre de suite recommandé
+
+1. Terminer les tests d’autorisations.
+2. Créer les Form Requests manquantes.
+3. Sortir la logique métier des routes vers des contrôleurs ou services.
+4. Activer et tester le vrai temps réel.
+5. Finir le polish de l’interface.

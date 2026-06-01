@@ -15,6 +15,7 @@ class Dashboard extends Component
     #[On('echo:board-updated,BoardUpdated')]
     #[On('meeting-saved')]
     #[On('action-converted')]
+    #[On('workspace-changed')]
     public function refresh()
     {
         // Re-render

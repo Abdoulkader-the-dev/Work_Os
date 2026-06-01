@@ -38,6 +38,12 @@
 @endphp
 
 <div style="display:flex;flex-direction:column;gap:20px;">
+    @if(!$workspace)
+        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
+            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
+            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour afficher le calendrier.</div>
+        </div>
+    @else
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div style="display:flex;align-items:center;gap:12px;">
             <a href="{{ route('calendar', ['month' => $startOfMonth->copy()->subMonth()->month, 'year' => $startOfMonth->copy()->subMonth()->year]) }}"
@@ -118,5 +124,6 @@
             </div>
         @endforeach
     </div>
+    @endif
 </div>
 </x-app-layout>

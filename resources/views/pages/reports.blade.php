@@ -3,7 +3,7 @@
 
 @php
     $workspace = auth()->user()?->activeWorkspace;
-    $boards = \App\Models\Board::query()->where('workspace_id', $workspace?->id)->get();
+    $boards = \App\Models\Board::query()->where('workspace_id', $workspace?->id)->withCount('items')->get();
     $itemQuery = \App\Models\Item::query()->whereHas('group.board', fn ($query) => $query->where('workspace_id', $workspace?->id));
 
     $totalTasks = (clone $itemQuery)->count();
@@ -27,6 +27,12 @@
 @endphp
 
 <div style="display:flex;flex-direction:column;gap:20px;">
+    @if(!$workspace)
+        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
+            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
+            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour consulter les rapports.</div>
+        </div>
+    @else
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
         <div class="bento-card" style="padding:20px;">
             <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:16px;">Tâches totales</div>
@@ -92,5 +98,6 @@
             </div>
         </div>
     </div>
+    @endif
 </div>
 </x-app-layout>

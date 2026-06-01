@@ -20,6 +20,7 @@ class BoardCalendar extends Component
     public function mount(Board $board): void
     {
         $this->authorize('view', $board);
+        auth()->user()?->forceFill(['current_workspace_id' => $board->workspace_id])->save();
         $this->board = $board;
         $this->year  = (int) request()->integer('year', now()->year);
         $this->month = (int) request()->integer('month', now()->month);

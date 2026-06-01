@@ -11,6 +11,12 @@
 @endphp
 
 <div style="display:flex;flex-direction:column;gap:14px;">
+    @if(!$workspace)
+        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
+            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
+            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour afficher les membres.</div>
+        </div>
+    @else
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
         <div style="font-size:12px;font-family:'DM Mono',monospace;color:var(--text-3);">
             {{ $members->count() }} membre{{ $members->count() > 1 ? 's' : '' }} dans {{ $workspace?->name ?? 'ce workspace' }}
@@ -53,5 +59,6 @@
             <div style="font-size:13px;">Le workspace n'a encore aucun membre associé.</div>
         </div>
     @endforelse
+    @endif
 </div>
 </x-app-layout>

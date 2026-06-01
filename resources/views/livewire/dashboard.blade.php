@@ -1,4 +1,18 @@
 <div style="display:flex;flex-direction:column;gap:24px;">
+    <div wire:loading.flex style="align-items:center;gap:8px;color:var(--text-3);font-size:13px;">
+        <svg class="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="16" stroke-linecap="round" opacity=".35"/>
+            <path d="M7 2a5 5 0 015 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Chargement du workspace...
+    </div>
+
+    @if(session('status') === 'workspace-created')
+        <div class="badge s-done" style="padding:12px 14px;width:100%;justify-content:flex-start;border-radius:10px;">
+            Workspace créé et activé.
+        </div>
+    @endif
+
     @if(!$workspace)
         {{-- Empty State --}}
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
