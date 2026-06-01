@@ -9,11 +9,12 @@ use Livewire\Attributes\On;
 class BoardIndex extends Component
 {
     #[On('echo:board-updated,BoardUpdated')]
+    #[On('workspace-changed')]
     public function refresh() {}
 
     public function render()
     {
-        $workspace = auth()->user()?->currentWorkspace;
+        $workspace = auth()->user()?->activeWorkspace;
         $boards = Board::query()
             ->where('workspace_id', $workspace?->id)
             ->withCount('items')
@@ -21,6 +22,7 @@ class BoardIndex extends Component
 
         return view('livewire.boards.board-index', [
             'boards' => $boards,
+            'workspace' => $workspace,
             'canManageBoards' => auth()->user()?->can('create', Board::class),
         ]);
     }

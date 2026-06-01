@@ -27,6 +27,7 @@ class BoardKanban extends Component
     public function mount(Board $board): void
     {
         $this->authorize('view', $board);
+        auth()->user()?->forceFill(['current_workspace_id' => $board->workspace_id])->save();
         $this->board = $board;
     }
 

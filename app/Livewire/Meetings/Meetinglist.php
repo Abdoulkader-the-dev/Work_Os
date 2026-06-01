@@ -5,6 +5,7 @@ namespace App\Livewire\Meetings;
 
 use App\Models\Meeting;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -16,6 +17,12 @@ class MeetingList extends Component
     public string $search    = '';
     public string $sortField = 'date';
     public string $sortDir   = 'desc';
+
+    #[On('workspace-changed')]
+    public function refresh(): void
+    {
+        $this->resetPage();
+    }
 
     public function updatingSearch(): void
     {

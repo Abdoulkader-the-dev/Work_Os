@@ -1,8 +1,8 @@
 <x-app-layout>
 @section('page-title', 'Paramètres')
 
-<div style="display:grid;grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);gap:16px;align-items:start;">
-    <div class="bento-card" style="padding:24px;">
+<div class="settings-grid">
+    <div class="bento-card" style="padding:24px;" data-tour-id="settings-profile">
         <div style="font-size:16px;font-weight:600;margin-bottom:18px;">Profil</div>
 
         @if (session('status') === 'profile-updated')
@@ -38,7 +38,7 @@
     </div>
 
     <div style="display:flex;flex-direction:column;gap:16px;">
-        <div class="bento-card" style="padding:24px;">
+        <div class="bento-card" style="padding:24px;" data-tour-id="settings-security">
             <div style="font-size:16px;font-weight:600;margin-bottom:18px;">Sécurité</div>
 
             @if (session('status') === 'password-updated')
@@ -75,7 +75,7 @@
                            style="width:100%;height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
                 </label>
 
-                <button type="submit" class="btn-primary" style="width:fit-content;">Mettre à jour</button>
+            <button type="submit" class="btn-primary" style="width:fit-content;">Mettre à jour</button>
             </form>
         </div>
 

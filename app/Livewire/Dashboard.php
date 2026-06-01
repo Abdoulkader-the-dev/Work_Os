@@ -15,6 +15,7 @@ class Dashboard extends Component
     #[On('echo:board-updated,BoardUpdated')]
     #[On('meeting-saved')]
     #[On('action-converted')]
+    #[On('workspace-changed')]
     public function refresh()
     {
         // Re-render
@@ -23,7 +24,29 @@ class Dashboard extends Component
     public function render()
     {
         $user = auth()->user();
-        $this->workspace = $user?->currentWorkspace;
+        $this->workspace = $user?->activeWorkspace;
+
+        if ($user && $user->shouldShowOnboarding()) {
+            $user->markOnboardingStarted('dashboard');
+        }
+
+        if (!$this->workspace) {
+            return view('livewire.dashboard', [
+                'workspace' => null,
+                'completionRate' => 0,
+                'doneTasks' => 0,
+                'totalTasks' => 0,
+                'tasksThisWeek' => 0,
+                'weeklyDelta' => 0,
+                'activeBoards' => 0,
+                'tasksDueThisWeek' => 0,
+                'recentActivity' => collect(),
+                'boardsPreview' => collect(),
+                'urgentTasks' => collect(),
+                'blockedTasks' => 0,
+                'members' => collect(),
+            ]);
+        }
 
         $boardQuery = Board::query()
             ->where('workspace_id', $this->workspace?->id);

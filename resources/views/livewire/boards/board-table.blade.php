@@ -9,14 +9,15 @@
 @endsection
 
 @section('topbar-action')
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;" data-tour-id="board-create-actions">
         <a class="btn-primary" href="{{ route('boards.show', ['board' => $board, 'createTask' => 1]) }}">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
             </svg>
             Nouvelle tâche
         </a>
-        <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
+            <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
+           data-tour-id="board-new-group"
            style="height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-2);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-decoration:none;">
             Nouveau groupe
         </a>
@@ -115,7 +116,7 @@
                     </button>
 
                     <div x-show="open"
-                         style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
+                         style="position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
                         <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                              onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
                              wire:click="startEditingGroup({{ $group->id }})" @click="open=false">

@@ -3,7 +3,7 @@
 @section('page-title', 'Réunions')
 
 @section('topbar-action')
-    <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate>
+    <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate data-tour-id="meeting-create">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
@@ -12,9 +12,16 @@
 @endsection
 
 <div style="display:flex;flex-direction:column;gap:20px;">
+    <div wire:loading.flex style="align-items:center;gap:8px;color:var(--text-3);font-size:13px;">
+        <svg class="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="16" stroke-linecap="round" opacity=".35"/>
+            <path d="M7 2a5 5 0 015 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Chargement des comptes rendus...
+    </div>
 
     {{-- ── TOOLBAR ── --}}
-    <div class="flex-between flex-wrap" style="gap:12px;">
+    <div class="flex-between flex-wrap" style="gap:12px;" data-tour-id="meeting-toolbar">
 
         {{-- Search --}}
         <div class="search-box" style="flex:1;min-width:220px;max-width:360px;">

@@ -16,4 +16,14 @@ class WorkspacePolicy
     {
         return $user->canManageWorkspace($workspace);
     }
+
+    public function manageMembers(User $user, Workspace $workspace): bool
+    {
+        return $user->canManageMembers($workspace);
+    }
+
+    public function delete(User $user, Workspace $workspace): bool
+    {
+        return $user->isWorkspaceOwner($workspace);
+    }
 }

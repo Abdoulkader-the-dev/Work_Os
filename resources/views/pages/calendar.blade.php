@@ -2,7 +2,7 @@
 @section('page-title', 'Calendrier')
 
 @php
-    $workspace = auth()->user()?->currentWorkspace;
+    $workspace = auth()->user()?->activeWorkspace;
     $year = max(2000, min(2100, (int) request('year', now()->year)));
     $month = max(1, min(12, (int) request('month', now()->month)));
 
@@ -38,7 +38,13 @@
 @endphp
 
 <div style="display:flex;flex-direction:column;gap:20px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    @if(!$workspace)
+        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
+            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
+            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour afficher le calendrier.</div>
+        </div>
+    @else
+    <div class="calendar-toolbar">
         <div style="display:flex;align-items:center;gap:12px;">
             <a href="{{ route('calendar', ['month' => $startOfMonth->copy()->subMonth()->month, 'year' => $startOfMonth->copy()->subMonth()->year]) }}"
                style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-2);text-decoration:none;">
@@ -64,15 +70,15 @@
         </div>
     </div>
 
-    <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;">
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg);border-bottom:1px solid var(--border);">
+    <div class="calendar-shell">
+        <div class="calendar-grid-headers" style="background:var(--bg);border-bottom:1px solid var(--border);">
             @foreach(['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'] as $day)
                 <div style="padding:10px;text-align:center;font-size:11px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);">{{ $day }}</div>
             @endforeach
         </div>
 
         @foreach($weeks as $week)
-            <div style="display:grid;grid-template-columns:repeat(7,1fr);">
+            <div class="calendar-grid-week">
                 @foreach($week as $day)
                     @php
                         $key = $day->format('Y-m-d');
@@ -118,5 +124,6 @@
             </div>
         @endforeach
     </div>
+    @endif
 </div>
 </x-app-layout>

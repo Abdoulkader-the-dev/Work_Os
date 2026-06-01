@@ -120,7 +120,7 @@ class MeetingEditor extends Component
         if ($action['converted'] ?? false) return;
 
         $board = Board::query()
-            ->where('workspace_id', auth()->user()?->currentWorkspace?->id)
+            ->where('workspace_id', auth()->user()?->activeWorkspace?->id)
             ->first();
         if (!$board) return;
 
@@ -209,7 +209,7 @@ class MeetingEditor extends Component
 
     public function getAvailableUsersProperty()
     {
-        $workspace = auth()->user()?->currentWorkspace;
+        $workspace = auth()->user()?->activeWorkspace;
         if (!$workspace) return collect([auth()->user()]);
 
         return collect([$workspace->owner])

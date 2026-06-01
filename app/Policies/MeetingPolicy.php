@@ -19,7 +19,7 @@ class MeetingPolicy
 
     public function create(User $user): bool
     {
-        return !is_null($user->id);
+        return $user->canEditWorkspaceContent($user->activeWorkspace);
     }
 
     public function update(User $user, Meeting $meeting): bool
