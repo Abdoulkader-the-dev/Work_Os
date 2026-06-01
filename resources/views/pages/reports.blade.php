@@ -2,7 +2,7 @@
 @section('page-title', 'Rapports')
 
 @php
-    $workspace = auth()->user()?->currentWorkspace;
+    $workspace = auth()->user()?->activeWorkspace;
     $boards = \App\Models\Board::query()->where('workspace_id', $workspace?->id)->get();
     $itemQuery = \App\Models\Item::query()->whereHas('group.board', fn ($query) => $query->where('workspace_id', $workspace?->id));
 

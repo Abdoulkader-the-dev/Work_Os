@@ -7,7 +7,7 @@
     <div x-cloak
          x-show="$wire.isOpen"
          x-transition.opacity.duration.180ms
-         style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);pointer-events:auto;"
+         style="position:absolute;inset:0;background:rgba(0,0,0,0.2);backdrop-filter:blur(2px);pointer-events:auto;"
          wire:click="closePanel()">
     </div>
 
@@ -106,7 +106,7 @@
                                 <span style="width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7;"></span>
                                 {{ match($item->status) { 'done'=>'Achevé','progress'=>'En cours','todo'=>'Non commencé','blocked'=>'Bloqué','ongoing'=>'Continu',default=>ucfirst($item->status) } }}
                             </button>
-                            <div x-show="open" style="display:none;margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
+                            <div x-show="open" style="margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
                                 @foreach(['done'=>'Achevé','progress'=>'En cours','todo'=>'Non commencé','blocked'=>'Bloqué','ongoing'=>'Continu'] as $val2=>$lbl)
                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
@@ -128,7 +128,7 @@
                                 <span style="width:8px;height:8px;border-radius:50%;background:{{ match($item->priority) {'critique'=>'#8b5cf6','haute'=>'#ef4444','moyenne'=>'#FFD100','basse'=>'#22c55e',default=>'#a3a39f'} }};"></span>
                                 {{ ucfirst($item->priority ?? 'Moyenne') }}
                             </button>
-                            <div x-show="open" style="display:none;margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
+                            <div x-show="open" style="margin-top:4px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;position:relative;z-index:10;">
                                 @foreach(['critique'=>['#8b5cf6','Critique'],'haute'=>['#ef4444','Haute'],'moyenne'=>['#FFD100','Moyenne'],'basse'=>['#22c55e','Basse']] as $v=>[$color,$lbl])
                                     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                                          onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"

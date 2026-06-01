@@ -13,7 +13,7 @@ class BoardIndex extends Component
 
     public function render()
     {
-        $workspace = auth()->user()?->currentWorkspace;
+        $workspace = auth()->user()?->activeWorkspace;
         $boards = Board::query()
             ->where('workspace_id', $workspace?->id)
             ->withCount('items')

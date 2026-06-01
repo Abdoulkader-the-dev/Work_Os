@@ -26,7 +26,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/boards', function (BoardStoreRequest $request) {
         $data = $request->validated();
 
-        $workspace = $request->user()?->currentWorkspace;
+        $workspace = $request->user()?->activeWorkspace;
 
         abort_unless($workspace, 422, 'Aucun workspace actif pour créer un board.');
 

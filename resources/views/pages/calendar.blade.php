@@ -2,7 +2,7 @@
 @section('page-title', 'Calendrier')
 
 @php
-    $workspace = auth()->user()?->currentWorkspace;
+    $workspace = auth()->user()?->activeWorkspace;
     $year = max(2000, min(2100, (int) request('year', now()->year)));
     $month = max(1, min(12, (int) request('month', now()->month)));
 

@@ -23,7 +23,25 @@ class Dashboard extends Component
     public function render()
     {
         $user = auth()->user();
-        $this->workspace = $user?->currentWorkspace;
+        $this->workspace = $user?->activeWorkspace;
+
+        if (!$this->workspace) {
+            return view('livewire.dashboard', [
+                'workspace' => null,
+                'completionRate' => 0,
+                'doneTasks' => 0,
+                'totalTasks' => 0,
+                'tasksThisWeek' => 0,
+                'weeklyDelta' => 0,
+                'activeBoards' => 0,
+                'tasksDueThisWeek' => 0,
+                'recentActivity' => collect(),
+                'boardsPreview' => collect(),
+                'urgentTasks' => collect(),
+                'blockedTasks' => 0,
+                'members' => collect(),
+            ]);
+        }
 
         $boardQuery = Board::query()
             ->where('workspace_id', $this->workspace?->id);

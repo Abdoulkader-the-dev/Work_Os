@@ -99,29 +99,176 @@
 
     </nav>
 
-    <div x-data="{ open: false }" class="sidebar-footer">
+    <div class="sidebar-footer">
         <div class="nav-section-label" style="padding:0 2px;margin-bottom:6px;">Workspace</div>
-        <div class="workspace-selector" @click="open = !open" @click.outside="open = false">
-            <div style="width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;"></div>
+
+        {{-- Sélecteur actif --}}
+        <div class="workspace-selector"
+             data-dropdown-trigger="workspace-menu"
+             onclick="wsResetCreating()"
+             style="cursor:pointer;user-select:none;">
+            <div style="width:8px;height:8px;border-radius:50%;background:{{ auth()->user()?->activeWorkspace?->color ?? 'var(--blue)' }};flex-shrink:0;"></div>
             <span class="text-sm font-medium" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                {{ auth()->user()?->workspaces()->first()?->name ?? 'UniPod HQ' }}
+                {{ auth()->user()?->activeWorkspace?->name ?? auth()->user()?->workspaces()->first()?->name ?? 'Aucun workspace' }}
             </span>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;" :style="open ? 'transform:rotate(180deg)' : ''">
+            <svg id="ws-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;">
                 <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </div>
+
         {{-- Dropdown workspace --}}
-        <div x-cloak
-             x-show="open"
-              style="display:none;position:absolute;bottom:68px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-btn);box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;z-index:50;">
+        <div id="workspace-menu"
+             data-dropdown-menu
+             hidden
+             style="position:absolute;bottom:72px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 -8px 32px rgba(0,0,0,0.12);padding:6px;z-index:50;max-height:380px;overflow-y:auto;scrollbar-width:thin;">
+
+            {{-- Liste des workspaces existants --}}
+            @php $currentWsId = auth()->user()?->activeWorkspace?->id ?? auth()->user()?->workspaces()->first()?->id; @endphp
             @foreach(auth()->user()?->workspaces ?? [] as $ws)
-                <div class="flex-center" style="gap:8px;padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;transition:background .15s;"
-                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-                    <div style="width:8px;height:8px;border-radius:50%;background:{{ $ws->color ?? 'var(--blue)' }};"></div>
-                    {{ $ws->name }}
+                <div wire:click="switchWorkspace({{ $ws->id }})"
+                     wire:key="ws-{{ $ws->id }}"
+                     class="flex-center"
+                     style="gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .12s;{{ $ws->id === $currentWsId ? 'background:var(--bg);font-weight:600;' : '' }}"
+                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='{{ $ws->id === $currentWsId ? 'var(--bg)' : '' }}'">
+                    <div style="width:8px;height:8px;border-radius:50%;background:{{ $ws->color ?? 'var(--blue)' }};flex-shrink:0;"></div>
+                    <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $ws->name }}</span>
+                    
+                    {{-- Loader pendant le switch --}}
+                    <div wire:loading wire:target="switchWorkspace({{ $ws->id }})">
+                        <svg class="animate-spin" width="12" height="12" viewBox="0 0 12 12" fill="none" style="color:var(--text-3);">
+                            <path d="M6 1v2M6 9v2M1 6h2M9 6h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+
+                    @if($ws->id === $currentWsId)
+                        <svg wire:loading.remove wire:target="switchWorkspace({{ $ws->id }})" width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;color:var(--blue);">
+                            <path d="M2 6l2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    @endif
                 </div>
             @endforeach
+
+            {{-- Séparateur --}}
+            <div style="height:1px;background:var(--border);margin:4px 2px;"></div>
+
+            {{-- Bouton Créer un workspace --}}
+            <div id="ws-btn-create">
+                <button type="button"
+                        onclick="wsShowCreating(event)"
+                        class="flex-center"
+                        style="width:100%;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;color:var(--text-2);transition:background .12s;"
+                        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    Créer un workspace
+                </button>
+            </div>
+
+            {{-- Formulaire de création --}}
+            <div id="ws-creating-form" hidden style="padding:2px 2px 4px;">
+                <input type="text"
+                       id="ws-name-input"
+                       wire:model="newWorkspaceName"
+                       placeholder="Nom du workspace..."
+                       onkeydown="wsInputKeydown(event)"
+                       style="width:100%;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg);outline:none;color:var(--text-1);margin-bottom:4px;transition:border-color .15s;box-sizing:border-box;"
+                       onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+                
+                @error('newWorkspaceName')
+                    <div style="color:#dc2626;font-size:11px;margin-bottom:6px;padding-left:4px;">{{ $message }}</div>
+                @enderror
+
+                <div class="flex-center" style="gap:6px;">
+                    <button type="button"
+                            id="ws-create-btn"
+                            wire:click="createWorkspace"
+                            wire:loading.attr="disabled"
+                            style="flex:1;padding:7px 10px;background:var(--text-1);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;"
+                            onmouseover="this.style.background='#2a2a28'" onmouseout="this.style.background='var(--text-1)'">
+                        <span wire:loading.remove wire:target="createWorkspace">Créer</span>
+                        <span wire:loading wire:target="createWorkspace">Création...</span>
+                        <svg wire:loading wire:target="createWorkspace" class="animate-spin" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="16" stroke-linecap="round" opacity="0.3"/>
+                            <path d="M6 1a5 5 0 015 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            onclick="wsCancelCreating(event)"
+                            style="padding:7px 10px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--text-2);transition:background .15s;"
+                            onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                        Annuler
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
+
+    <script>
+    function wsShowCreating(event) {
+        event.stopPropagation();
+        var btnCreate = document.getElementById('ws-btn-create');
+        var form = document.getElementById('ws-creating-form');
+        if (btnCreate) btnCreate.hidden = true;
+        if (form) form.hidden = false;
+        setTimeout(function() {
+            var input = document.getElementById('ws-name-input');
+            if (input) { input.value = ''; input.focus(); }
+        }, 30);
+    }
+
+    function wsCancelCreating(event) {
+        event.stopPropagation();
+        var btnCreate = document.getElementById('ws-btn-create');
+        var form = document.getElementById('ws-creating-form');
+        if (btnCreate) btnCreate.hidden = false;
+        if (form) form.hidden = true;
+        var input = document.getElementById('ws-name-input');
+        if (input) {
+            input.value = '';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+
+    function wsResetCreating() {
+        var btnCreate = document.getElementById('ws-btn-create');
+        var form = document.getElementById('ws-creating-form');
+        if (btnCreate) btnCreate.hidden = false;
+        if (form) form.hidden = true;
+        var input = document.getElementById('ws-name-input');
+        if (input) input.value = '';
+    }
+
+    function wsInputKeydown(event) {
+        event.stopPropagation();
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            var createBtn = document.getElementById('ws-create-btn');
+            if (createBtn) createBtn.click();
+        }
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            wsCancelCreating(event);
+            var menu = document.getElementById('workspace-menu');
+            if (menu) menu.hidden = true;
+        }
+    }
+
+    // Rotate chevron when dropdown opens/closes
+    (function() {
+        var observer = new MutationObserver(function() {
+            var menu = document.getElementById('workspace-menu');
+            var chevron = document.getElementById('ws-chevron');
+            if (menu && chevron) {
+                chevron.style.transform = menu.hidden ? '' : 'rotate(180deg)';
+            }
+        });
+        var menu = document.getElementById('workspace-menu');
+        if (menu) {
+            observer.observe(menu, { attributes: true, attributeFilter: ['hidden'] });
+        }
+    })();
+    </script>
 
 </aside>

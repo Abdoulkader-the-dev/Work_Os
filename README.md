@@ -67,13 +67,11 @@ Ce projet suit l'architecture MVC (Modèle-Vue-Contrôleur) classique de Laravel
     - Ajout de groupe fonctionnel.
     - Panneau latéral de tâche fonctionnel.
 - **Dashboard et onglets principaux dynamisés :**
-    - Dashboard
-    - Calendrier
-    - Rapports
-    - Membres
-    - Notifications
-    - Paramètres
-- **UI/UX :**
+    - Dashboard avec état vide (Empty State) personnalisé pour les nouveaux utilisateurs.
+    - Calendrier, Rapports, Membres, Notifications, Paramètres.
+- **UI/UX & Feedback visuel :**
+    - **Barre de progression globale** : Ajout d'une barre de chargement en haut de page lors des transitions `wire:navigate`.
+    - **États de chargement** : Spinners et indicateurs visuels ajoutés sur les actions critiques (création/switch de workspace).
     - Transitions Alpine sur le panneau tâche.
     - Transitions sur le dropdown notifications.
     - Animation du modal de création board.
@@ -88,6 +86,10 @@ Ce projet suit l'architecture MVC (Modèle-Vue-Contrôleur) classique de Laravel
 
 ### ⚙️ Backend
 
+- **Gestion des Workspaces :**
+    - Création et switch de workspace avec redirection automatique vers le dashboard.
+    - Logique de "Workspace actif" persistante en base de données.
+    - Rafraîchissement automatique de l'état utilisateur après modifications.
 - **CRUD partiellement finalisé :**
     - Board : create, read, update, delete disponibles.
     - Group : create, update partiel, delete.

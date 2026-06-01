@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Workspace;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,15 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Créer un workspace par défaut pour le nouvel utilisateur
+        $workspace = Workspace::create([
+            'name' => $request->name . "'s Workspace",
+            'user_id' => $user->id,
+            'color' => '#0091CD',
+        ]);
+        $user->workspaces()->attach($workspace->id, ['role' => 'admin']);
+        $user->update(['current_workspace_id' => $workspace->id]);
 
         event(new Registered($user));
 

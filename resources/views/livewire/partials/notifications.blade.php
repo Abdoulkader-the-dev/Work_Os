@@ -25,7 +25,7 @@
          x-show="open"
          x-transition.opacity.scale.98.duration.180ms.origin.top.right
          @click.outside="open = false"
-         style="display:none;position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;transform-origin:top right;">
+         style="position:absolute;right:0;top:calc(100% + 10px);width:380px;background:white;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,0.12);z-index:60;overflow:hidden;transform-origin:top right;">
 
         <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
             <div style="display:flex;align-items:center;gap:8px;">

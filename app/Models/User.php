@@ -10,7 +10,7 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $fillable = ['name', 'email', 'password'];
+    protected $fillable = ['name', 'email', 'password', 'current_workspace_id'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -21,17 +21,24 @@ class User extends Authenticatable
         ];
     }
 
-   public function workspaces() { 
-    return $this->belongsToMany(Workspace::class, 'workspace_user')->withPivot('role'); 
-}
+    public function workspaces() { 
+        return $this->belongsToMany(Workspace::class, 'workspace_user')->withPivot('role'); 
+    }
     public function ownedWorkspaces()  { return $this->hasMany(Workspace::class); }
+    public function currentWorkspaceRel() { return $this->belongsTo(Workspace::class, 'current_workspace_id'); }
     public function items()            { return $this->belongsToMany(Item::class, 'item_user'); }
     public function comments()         { return $this->hasMany(Comment::class); }
     public function meetings()         { return $this->hasMany(Meeting::class); }
     public function notifications()    { return $this->hasMany(Notification::class); }
 
     // Workspace courant (premier par défaut)
-    public function getCurrentWorkspaceAttribute() {
+    public function getActiveWorkspaceAttribute() {
+        if ($this->current_workspace_id) {
+            $workspace = $this->currentWorkspaceRel;
+            if ($workspace) {
+                return $workspace;
+            }
+        }
         return $this->workspaces()->first();
     }
 

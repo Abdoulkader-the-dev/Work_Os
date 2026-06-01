@@ -115,7 +115,7 @@
                     </button>
 
                     <div x-show="open"
-                         style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
+                         style="position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
                         <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                              onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
                              wire:click="startEditingGroup({{ $group->id }})" @click="open=false">

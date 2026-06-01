@@ -56,6 +56,11 @@ class DatabaseSeeder extends Seeder
             $boris->id   => ['role' => 'member'],
         ]);
 
+        // Initialiser le workspace courant pour tous les utilisateurs
+        foreach ([$caleb, $mohamed, $alice, $boris] as $u) {
+            $u->update(['current_workspace_id' => $workspace->id]);
+        }
+
         // ── BOARDS ─────────────────────────────────────────
         $boardBloc = Board::create([
             'name'         => 'Blochallenge 2025',

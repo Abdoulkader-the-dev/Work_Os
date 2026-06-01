@@ -188,5 +188,15 @@
 
     @stack('scripts')
 
+    <div id="global-loader" class="loading-bar" style="display:none;"></div>
+
+    <script>
+    document.addEventListener('livewire:navigating', () => {
+        document.getElementById('global-loader').style.display = 'block';
+    });
+    document.addEventListener('livewire:navigated', () => {
+        document.getElementById('global-loader').style.display = 'none';
+    });
+    </script>
 </body>
 </html>

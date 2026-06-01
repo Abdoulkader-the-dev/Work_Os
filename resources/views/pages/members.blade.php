@@ -2,7 +2,7 @@
 @section('page-title', 'Membres')
 
 @php
-    $workspace = auth()->user()?->currentWorkspace;
+    $workspace = auth()->user()?->activeWorkspace;
     $members = collect([$workspace?->owner])
         ->merge($workspace?->members ?? collect())
         ->filter()
