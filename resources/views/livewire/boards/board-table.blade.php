@@ -109,14 +109,19 @@
                 </div>
 
                 {{-- Group actions dropdown --}}
-                <div x-data="{ open: false }" style="position:relative;">
-                    <button @click="open = !open" @click.outside="open = false"
-                            class="icon-btn" style="width:26px;height:26px;border:none;background:none;">
+                <div class="relative" data-group-menu>
+                    <button type="button"
+                            class="icon-btn"
+                            style="width:26px;height:26px;border:none;background:none;"
+                            data-group-menu-trigger
+                            aria-expanded="false">
                         ···
                     </button>
 
-                    <div x-show="open"
-                         style="position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
+                    <div data-group-menu-panel
+                         hidden
+                         class="absolute z-50 mt-1 rounded-md shadow-lg"
+                         style="right:0;top:calc(100% + 4px);background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
                         <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
                              onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
                              wire:click="startEditingGroup({{ $group->id }})" @click="open=false">
@@ -207,7 +212,7 @@
                                     {{-- Statut --}}
                                     <td style="padding:10px;" @click.stop>
                                         <div x-data="{ open: false }" style="position:relative;">
-                                            <button @click="open = !open" @click.outside="open = false"
+                                            <button type="button" @click="open = !open" @click.outside="open = false"
                                                     class="badge s-{{ $item->status }}"
                                                     style="gap:5px;border:none;cursor:pointer;">
                                                 <span style="width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.7;flex-shrink:0;"></span>
@@ -268,7 +273,7 @@
                                     {{-- Priorité --}}
                                     <td style="padding:10px;" @click.stop>
                                         <div x-data="{ open: false }" style="position:relative;">
-                                            <button @click="open = !open" @click.outside="open = false"
+                                            <button type="button" @click="open = !open" @click.outside="open = false"
                                                     class="flex-center text-xs font-medium text-2" style="background:none;border:none;cursor:pointer;gap:5px;">
                                                 <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:{{ match($item->priority) { 'critique'=>'#8b5cf6','haute'=>'#ef4444','moyenne'=>'#FFD100','basse'=>'#22c55e',default=>'#a3a39f'} }};"></span>
                                                 {{ ucfirst($item->priority ?? 'moyenne') }}
@@ -321,7 +326,7 @@
                                     {{-- Actions ··· --}}
                                     <td style="padding:10px;text-align:center;" @click.stop>
                                         <div x-data="{ open: false }" style="position:relative;display:inline-block;">
-                                            <button @click="open = !open" @click.outside="open = false"
+                                            <button type="button" @click="open = !open" @click.outside="open = false"
                                                     class="icon-btn" style="width:28px;height:28px;border:none;background:none;">
                                                 ···
                                             </button>
@@ -435,4 +440,46 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script>
+(() => {
+    const closeGroupMenus = (exceptMenu = null) => {
+        document.querySelectorAll('[data-group-menu]').forEach((menu) => {
+            const panel = menu.querySelector('[data-group-menu-panel]');
+            const trigger = menu.querySelector('[data-group-menu-trigger]');
+            if (!panel || !trigger) return;
+
+            const shouldKeepOpen = exceptMenu && menu === exceptMenu;
+            panel.hidden = !shouldKeepOpen;
+            trigger.setAttribute('aria-expanded', shouldKeepOpen ? 'true' : 'false');
+        });
+    };
+
+    document.addEventListener('click', (event) => {
+        const trigger = event.target.closest('[data-group-menu-trigger]');
+        if (trigger) {
+            const menu = trigger.closest('[data-group-menu]');
+            const panel = menu?.querySelector('[data-group-menu-panel]');
+            if (!menu || !panel) return;
+
+            const willOpen = panel.hidden;
+            closeGroupMenus(willOpen ? menu : null);
+            event.stopPropagation();
+            return;
+        }
+
+        if (!event.target.closest('[data-group-menu]')) {
+            closeGroupMenus();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeGroupMenus();
+        }
+    });
+
+    document.addEventListener('livewire:navigated', () => closeGroupMenus());
+    document.addEventListener('livewire:rendered', () => closeGroupMenus());
+})();
+</script>
 @endpush

@@ -502,6 +502,90 @@ Si on résume très simplement:
 
 ---
 
+## Lancer le projet correctement
+
+### Prérequis
+
+- PHP `^8.3`
+- Composer
+- Node.js récent avec `npm`
+- Une base de données configurée dans `.env`
+
+### Installation propre
+
+1. Installer les dépendances PHP.
+2. Installer les dépendances front.
+3. Copier `.env.example` vers `.env` si le fichier n’existe pas déjà.
+4. Générer la clé d’application.
+5. Exécuter les migrations.
+
+Commande la plus simple si tu pars de zéro:
+
+```bash
+composer setup
+```
+
+Ce script fait, dans l’ordre:
+- `composer install`
+- création de `.env` si besoin
+- `php artisan key:generate`
+- `php artisan migrate --force`
+- `npm install --ignore-scripts`
+- `npm run build`
+
+### Lancer en développement
+
+Le projet a déjà un script dédié:
+
+```bash
+composer dev
+```
+
+Ce script démarre en parallèle:
+- le serveur Laravel,
+- le worker de queue,
+- le journal live `pail`,
+- Vite pour le frontend.
+
+### Option manuelle
+
+Si tu préfères lancer les services séparément:
+
+```bash
+php artisan serve
+php artisan queue:listen --tries=1 --timeout=0
+npm run dev
+```
+
+Ouvre ensuite l’application sur l’URL indiquée par `php artisan serve`.
+
+### Vérifications à faire si quelque chose ne marche pas
+
+- Vérifier que `.env` pointe vers la bonne base de données.
+- Vérifier que `APP_KEY` est bien générée.
+- Vérifier que les migrations ont été appliquées.
+- Vérifier que `npm run build` passe sans erreur si tu testes en mode production.
+- Vérifier que le worker de queue tourne si les notifications ou le temps réel semblent inactifs.
+- Vérifier que le cache Laravel a été vidé après une modification de configuration:
+
+```bash
+php artisan config:clear
+```
+
+### Commande de test
+
+```bash
+php artisan test
+```
+
+Si tu veux repartir d’une base propre en local:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+---
+
 ## Statut global
 
 Le projet est déjà bien avancé et le frontend principal est considéré comme terminé pour le périmètre actuel.
