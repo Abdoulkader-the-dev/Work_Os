@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Events\BoardUpdated;
 use App\Http\Requests\BoardStoreRequest;
 use App\Http\Requests\BoardUpdateRequest;
+use App\Http\Requests\WorkspaceMemberStoreRequest;
+use App\Http\Requests\WorkspaceMemberUpdateRequest;
 use App\Http\Controllers\ProfileController;
 use App\Livewire\Boards\BoardTable;
 use App\Livewire\Boards\BoardKanban;
@@ -100,17 +102,8 @@ Route::middleware(['auth'])->group(function () {
         return redirect()->route('dashboard')->with('status', 'workspace-deleted');
     })->name('workspaces.destroy');
 
-    Route::post('/workspaces/{workspace}/members', function (Request $request, Workspace $workspace) {
-        abort_unless($request->user()->can('manageMembers', $workspace), 403);
-
-        $data = $request->validate([
-            'email' => ['required', 'email'],
-            'role' => ['required', 'in:admin,member,reader'],
-        ], [
-            'email.required' => 'L’adresse e-mail est requise.',
-            'email.email' => 'L’adresse e-mail est invalide.',
-            'role.required' => 'Le rôle est requis.',
-        ]);
+    Route::post('/workspaces/{workspace}/members', function (WorkspaceMemberStoreRequest $request, Workspace $workspace) {
+        $data = $request->validated();
 
         $member = User::where('email', $data['email'])->first();
 
@@ -133,14 +126,11 @@ Route::middleware(['auth'])->group(function () {
         return back()->with('status', 'workspace-member-added');
     })->name('workspaces.members.store');
 
-    Route::patch('/workspaces/{workspace}/members/{user}', function (Request $request, Workspace $workspace, User $user) {
-        abort_unless($request->user()->can('manageMembers', $workspace), 403);
+    Route::patch('/workspaces/{workspace}/members/{user}', function (WorkspaceMemberUpdateRequest $request, Workspace $workspace, User $user) {
 
         abort_unless($workspace->members()->whereKey($user->id)->exists(), 404);
 
-        $data = $request->validate([
-            'role' => ['required', 'in:admin,member,reader'],
-        ]);
+        $data = $request->validated();
 
         if ((int) $workspace->user_id === (int) $user->id) {
             $data['role'] = 'admin';

@@ -368,6 +368,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - la suppression de boards,
   - l’affichage selon les permissions.
 - Les parcours principaux sont prêts à l’usage et l’interface est jugée complète dans sa version actuelle.
+- Les écrans secondaires suivent maintenant la même logique de rôle et de visibilité.
 
 ### Backend
 
@@ -398,6 +399,11 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - `admin`,
   - `member`,
   - `reader`.
+- Des `FormRequest` dédiés ont commencé à remplacer les validations en closure pour les membres de workspace.
+- Des tests d’autorisations ont commencé à couvrir les cas principaux:
+  - admin autorisé,
+  - member limité,
+  - reader en lecture seule.
 
 ### Base de données
 
@@ -419,6 +425,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
 - Les réunions sont stockées avec des champs structurés en tableaux.
 - Le pivot `workspace_user` garde le rôle de chaque membre dans chaque workspace.
 - Les données de tutoriel utilisateur sont aussi persistées pour l’onboarding.
+- La base actuelle contient déjà les structures nécessaires pour le partage de workspace et l’onboarding.
 
 ---
 
@@ -447,7 +454,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - comment,
   - notification.
 - Finaliser la logique du rôle `reader` dans tous les écrans, pas seulement les vues principales.
-- Renforcer les tests sur:
+- Compléter les tests d’autorisations sur:
   - les permissions,
   - les mises à jour,
   - les suppressions,
@@ -497,7 +504,7 @@ Si on résume très simplement:
 
 ## Statut global
 
-Le projet est déjà bien avancé.
+Le projet est déjà bien avancé et le frontend principal est considéré comme terminé pour le périmètre actuel.
 
 Il possède une base fonctionnelle solide sur les 3 couches:
 - frontend,
@@ -511,6 +518,13 @@ Le produit est exploitable, mais il reste encore du travail pour:
 - finir la couverture de tests,
 - finaliser certaines parties de l’interface,
 - rendre le temps réel pleinement opérationnel.
+
+La logique métier la plus importante est déjà en place:
+- les workspaces peuvent être créés, partagés, renommés et supprimés,
+- les rôles `admin`, `member` et `reader` existent,
+- le parcours d’invitation fonctionne aussi pour les nouveaux utilisateurs,
+- les vues principales sont connectées aux données réelles,
+- le tutoriel d’onboarding est en place.
 
 ---
 
