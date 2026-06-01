@@ -1,20 +1,23 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use App\Events\BoardUpdated;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\WorkspaceController;
 use App\Http\Requests\BoardStoreRequest;
 use App\Http\Requests\BoardUpdateRequest;
-use App\Http\Controllers\ProfileController;
-use App\Livewire\Boards\BoardTable;
-use App\Livewire\Boards\BoardKanban;
 use App\Livewire\Boards\BoardCalendar;
+use App\Livewire\Boards\BoardKanban;
+use App\Livewire\Boards\BoardTable;
 use App\Models\Board;
 use App\Models\Notification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Validator;
 
 // Racine → dashboard
 Route::get('/', fn() => redirect()->route('dashboard'));
+
+Route::post('/workspaces/{workspace}/members', [WorkspaceController::class, 'addMember'])->name('workspaces.members.add');
 
 // Routes protégées
 Route::middleware(['auth'])->group(function () {
@@ -167,6 +170,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/boards/{board}',          BoardTable::class)->name('boards.show');
     Route::get('/boards/{board}/kanban',   BoardKanban::class)->name('boards.kanban');
     Route::get('/boards/{board}/calendar', BoardCalendar::class)->name('boards.calendar');
+
 
     // Réunions
     Route::get('/meetings',                fn() => view('pages.meetings'))->name('meetings.index');
