@@ -4,12 +4,23 @@ namespace App\Livewire;
 
 use App\Models\Notification;
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class Notifications extends Component
 {
-    #[On('echo:users.{auth.id},NotificationSent')]
-    public function refresh() {}
+    public function refresh(): void {}
+
+    protected function getListeners(): array
+    {
+        $userId = auth()->id();
+
+        if (!$userId) {
+            return [];
+        }
+
+        return [
+            "echo-private:users.{$userId},NotificationSent" => 'refresh',
+        ];
+    }
 
     public function markAllAsRead()
     {

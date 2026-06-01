@@ -36,7 +36,25 @@
         <div class="flex-between flex-wrap" style="gap:14px;">
             <div>
                 <h2 class="text-2xl font-semibold text-1" style="letter-spacing:-0.03em;line-height:1;">Aujourd'hui</h2>
-                <p class="text-xs text-3 f-mono" style="margin-top:6px;">
+                <p class="text-xs text-3 f-mono" style="margin-top:6px;"
+                   x-data="{
+                        time: '',
+                        init() {
+                            const update = () => {
+                                this.time = new Intl.DateTimeFormat('fr-FR', {
+                                    weekday: 'short',
+                                    day: 'numeric',
+                                    month: 'short',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                }).format(new Date());
+                            };
+                            update();
+                            setInterval(update, 1000);
+                        }
+                   }"
+                   x-init="init()"
+                   x-text="time">
                     {{ now()->isoFormat('ddd D MMM · HH:mm') }}
                 </p>
             </div>
@@ -57,41 +75,30 @@
                 </div>
 
                 <div class="bento-card"
-                     style="display:flex;align-items:center;gap:16px;padding:14px 20px;cursor:pointer;"
-                     x-data="{
-                        running: false,
-                        seconds: 0,
-                        timer: null,
-                        get display() {
-                            const h = String(Math.floor(this.seconds / 3600)).padStart(2, '0');
-                            const m = String(Math.floor((this.seconds % 3600) / 60)).padStart(2, '0');
-                            const s = String(this.seconds % 60).padStart(2, '0');
-                            return `${h}:${m}:${s}`;
-                        },
-                        toggle() {
-                            this.running = !this.running;
-                            if (this.running) {
-                                this.timer = setInterval(() => this.seconds++, 1000);
-                            } else {
-                                clearInterval(this.timer);
-                            }
-                        }
-                     }"
-                     @click="toggle()">
-                    <div>
-                        <div class="text-sm font-medium">Démarrer le chrono</div>
-                        <div class="text-xl font-semibold text-1 f-mono" style="letter-spacing:-0.02em;margin-top:2px;"
-                             x-text="display">00:00:00</div>
+                     id="work-timer-card"
+                     data-tour-id="dashboard-timer"
+                     data-timer-key="unipod-work-timer"
+                     style="display:flex;align-items:center;gap:16px;padding:14px 20px;cursor:pointer;min-width:260px;">
+                    <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                        <div class="text-sm font-medium" id="work-timer-status">Chrono arrêté</div>
+                        <div class="text-xl font-semibold text-1 f-mono" id="work-timer-display" style="letter-spacing:-0.02em;">00:00:00</div>
                     </div>
-                    <div style="width:42px;height:42px;background:var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform .2s;flex-shrink:0;"
-                         :style="running ? 'transform:scale(1.08)' : ''">
-                        <svg x-cloak x-show="!running" width="16" height="16" viewBox="0 0 16 16" fill="none" style="margin-left:2px;">
-                            <path d="M5 3l9 5-9 5V3z" fill="#111110"/>
-                        </svg>
-                        <svg x-cloak x-show="running" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                            <rect x="3" y="3" width="4" height="10" rx="1" fill="#111110"/>
-                            <rect x="9" y="3" width="4" height="10" rx="1" fill="#111110"/>
-                        </svg>
+                    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                        <button type="button"
+                                class="icon-btn"
+                                id="work-timer-toggle"
+                                style="width:auto;min-width:96px;padding:0 14px;height:42px;background:var(--yellow);border-color:transparent;color:var(--text-1);font-weight:600;"
+                                aria-label="Démarrer le chrono">
+                            <span id="work-timer-toggle-label">Démarrer le chrono</span>
+                        </button>
+                        <button type="button"
+                                class="icon-btn"
+                                id="work-timer-reset"
+                                style="width:42px;height:42px;background:var(--bg);"
+                                aria-label="Réinitialiser le chrono"
+                                title="Réinitialiser">
+                            ↺
+                        </button>
                     </div>
                 </div>
             </div>
@@ -263,3 +270,142 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+(function () {
+    const storageKey = 'unipod-work-timer';
+    let timerId = null;
+    let running = false;
+    let seconds = 0;
+    let startedAt = null;
+
+    const card = document.getElementById('work-timer-card');
+    const display = document.getElementById('work-timer-display');
+    const status = document.getElementById('work-timer-status');
+    const toggle = document.getElementById('work-timer-toggle');
+    const toggleLabel = document.getElementById('work-timer-toggle-label');
+    const reset = document.getElementById('work-timer-reset');
+
+    if (!card || !display || !status || !toggle || !toggleLabel || !reset) {
+        return;
+    }
+
+    const format = (totalSeconds) => {
+        const h = String(Math.floor(totalSeconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+        const s = String(totalSeconds % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    };
+
+    const persist = () => {
+        localStorage.setItem(storageKey, JSON.stringify({
+            running,
+            seconds,
+            startedAt,
+        }));
+    };
+
+    const render = () => {
+        display.textContent = format(seconds);
+        status.textContent = running ? 'Chrono en cours' : 'Chrono arrêté';
+        toggleLabel.textContent = running ? 'Pause' : 'Démarrer le chrono';
+        toggle.setAttribute('aria-label', running ? 'Mettre le chrono en pause' : 'Démarrer le chrono');
+    };
+
+    const tick = () => {
+        if (!running || startedAt === null) return;
+        seconds = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+        render();
+        persist();
+    };
+
+    const start = () => {
+        if (!running) {
+            running = true;
+            startedAt = startedAt ?? (Date.now() - (seconds * 1000));
+            timerId = window.setInterval(tick, 1000);
+            tick();
+        }
+        render();
+        persist();
+    };
+
+    const pause = () => {
+        if (timerId !== null) {
+            window.clearInterval(timerId);
+            timerId = null;
+        }
+        tick();
+        running = false;
+        render();
+        persist();
+    };
+
+    const toggleTimer = () => {
+        if (running) {
+            pause();
+        } else {
+            start();
+        }
+    };
+
+    const resetTimer = () => {
+        if (timerId !== null) {
+            window.clearInterval(timerId);
+            timerId = null;
+        }
+        running = false;
+        seconds = 0;
+        startedAt = null;
+        localStorage.removeItem(storageKey);
+        render();
+    };
+
+    const restore = () => {
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (!raw) {
+                render();
+                return;
+            }
+
+            const state = JSON.parse(raw);
+            running = Boolean(state.running);
+            seconds = Number(state.seconds || 0);
+            startedAt = state.startedAt ? Number(state.startedAt) : null;
+
+            if (running && startedAt) {
+                timerId = window.setInterval(tick, 1000);
+                tick();
+            } else {
+                render();
+            }
+        } catch (error) {
+            localStorage.removeItem(storageKey);
+            render();
+        }
+    };
+
+    toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleTimer();
+    });
+
+    reset.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        resetTimer();
+    });
+
+    card.addEventListener('click', (event) => {
+        if (event.target.closest('button')) return;
+        toggleTimer();
+    });
+
+    window.addEventListener('beforeunload', persist);
+    restore();
+})();
+</script>
+@endpush

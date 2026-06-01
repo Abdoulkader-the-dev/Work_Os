@@ -52,6 +52,24 @@ class RegisteredUserController extends Controller
         $user->workspaces()->attach($workspace->id, ['role' => 'admin']);
         $user->update(['current_workspace_id' => $workspace->id]);
 
+        $pendingInvite = $request->session()->pull('pending_workspace_invite');
+        if (is_array($pendingInvite) && !empty($pendingInvite['workspace_id'])) {
+            $inviteWorkspace = Workspace::find($pendingInvite['workspace_id']);
+            if ($inviteWorkspace) {
+                $role = in_array(($pendingInvite['role'] ?? 'member'), ['admin', 'member', 'reader'], true)
+                    ? $pendingInvite['role']
+                    : 'member';
+
+                $inviteWorkspace->members()->syncWithoutDetaching([
+                    $user->id => ['role' => $role],
+                ]);
+
+                $user->forceFill([
+                    'current_workspace_id' => $inviteWorkspace->id,
+                ])->save();
+            }
+        }
+
         event(new Registered($user));
 
         Auth::login($user);

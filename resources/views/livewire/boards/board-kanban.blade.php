@@ -9,7 +9,7 @@
 @endsection
 
 @section('topbar-action')
-    <a class="btn-primary" href="{{ route('boards.kanban', ['board' => $board, 'createTask' => 1]) }}">
+    <a class="btn-primary" href="{{ route('boards.kanban', ['board' => $board, 'createTask' => 1]) }}" data-tour-id="board-create-task">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
         </svg>

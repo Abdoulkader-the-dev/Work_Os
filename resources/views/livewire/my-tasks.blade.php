@@ -25,9 +25,9 @@
             <div class="text-sm">Tes tâches apparaîtront ici dès qu'elles te seront attribuées.</div>
         </div>
     @else
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;" data-tour-id="my-tasks-list">
             @foreach($items as $item)
-                <div class="bento-card" style="padding:18px;display:flex;flex-direction:column;gap:12px;" wire:key="my-task-{{ $item->id }}">
+                <div class="bento-card" style="padding:18px;display:flex;flex-direction:column;gap:12px;" wire:key="my-task-{{ $item->id }}" tabindex="0" aria-label="Tâche {{ $item->name }}">
                     <div class="flex-between" style="align-items:flex-start;gap:10px;">
                         <div style="flex:1;min-width:0;">
                             <div class="text-md font-semibold text-1" style="letter-spacing:-0.015em;line-height:1.35;">
@@ -52,7 +52,8 @@
                         </div>
                         @if($item->group?->board)
                             <a href="{{ route('boards.show', $item->group->board) }}"
-                               class="text-sm font-medium" style="color:var(--blue);text-decoration:none;">
+                               class="text-sm font-medium" style="color:var(--blue);text-decoration:none;"
+                               aria-label="Ouvrir le board {{ $item->group->board->name ?? '' }}">
                                 Ouvrir le board →
                             </a>
                         @endif

@@ -41,6 +41,14 @@ Il regroupe:
 
 Chaque utilisateur peut avoir un espace courant. C’est l’espace qu’il voit en priorité lorsqu’il se connecte.
 
+Un workspace peut aussi être partagé avec d’autres personnes. Le propriétaire ou un admin peut:
+- ajouter un membre par e-mail,
+- lui donner un rôle,
+- retirer un accès,
+- générer un lien d’invitation.
+
+Si la personne n’a pas encore de compte, elle peut ouvrir le lien d’invitation, créer son compte ou se connecter, puis rejoindre automatiquement le workspace.
+
 ### 2. Les tableaux
 
 Un tableau représente un projet ou un chantier.
@@ -185,6 +193,52 @@ Elles définissent:
 - les modales,
 - les blocs réutilisables.
 
+### Les rôles d’accès
+
+Le projet distingue maintenant 3 rôles dans un workspace.
+
+#### Admin
+
+L’admin est la personne qui gère le workspace.
+
+Il peut:
+- renommer le workspace,
+- supprimer le workspace,
+- ajouter ou retirer des membres,
+- changer les rôles,
+- créer, modifier et supprimer les boards,
+- créer et modifier le contenu du workspace.
+
+#### Membre
+
+Le membre participe au travail quotidien.
+
+Il peut:
+- consulter le workspace,
+- travailler sur les boards et les tâches,
+- utiliser les vues de suivi,
+- recevoir les notifications,
+- rejoindre un workspace partagé.
+
+Il ne peut pas:
+- gérer les membres,
+- renommer le workspace,
+- supprimer le workspace.
+
+#### Lecture seule
+
+Le rôle `reader` sert à consulter sans modifier.
+
+Il peut:
+- voir le workspace,
+- lire les boards, tâches, réunions et notifications.
+
+Il ne peut pas:
+- créer,
+- modifier,
+- supprimer,
+- gérer les accès.
+
 ### La base de données
 
 La base de données garde les informations de façon persistante.
@@ -282,6 +336,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
 
 ### Frontend
 
+- Le frontend principal est terminé pour le périmètre actuel du projet.
 - Les vues principales des tableaux sont opérationnelles.
 - Les 3 vues de board sont branchées sur des vraies données:
   - tableau,
@@ -312,10 +367,12 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - la modification de boards,
   - la suppression de boards,
   - l’affichage selon les permissions.
+- Les parcours principaux sont prêts à l’usage et l’interface est jugée complète dans sa version actuelle.
 
 ### Backend
 
 - Les workspaces peuvent être créés et changés.
+- Les workspaces peuvent être partagés par e-mail ou par lien d’invitation.
 - Le workspace courant est mémorisé en base.
 - Les boards peuvent être:
   - créés,
@@ -337,6 +394,10 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - board,
   - workspace,
   - meeting.
+- La logique des rôles de workspace est désormais explicite:
+  - `admin`,
+  - `member`,
+  - `reader`.
 
 ### Base de données
 
@@ -356,6 +417,8 @@ Contient le point d’entrée public de l’application et les assets compilés.
 - Des données de démonstration existent déjà dans les seeders.
 - Les tâches ont déjà un champ de description.
 - Les réunions sont stockées avec des champs structurés en tableaux.
+- Le pivot `workspace_user` garde le rôle de chaque membre dans chaque workspace.
+- Les données de tutoriel utilisateur sont aussi persistées pour l’onboarding.
 
 ---
 
@@ -368,6 +431,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
 - Finir le polish UI des éléments encore incohérents.
 - Renforcer les retours visuels sur certaines actions.
 - Vérifier que toutes les pages gardent une expérience homogène sur desktop et mobile.
+- Cacher encore plus finement les actions UI selon le rôle `reader` sur tous les écrans secondaires.
 
 ### Backend
 
@@ -382,7 +446,7 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - group,
   - comment,
   - notification.
-- Finaliser la logique du rôle `reader` dans les droits, les seeders et l’interface.
+- Finaliser la logique du rôle `reader` dans tous les écrans, pas seulement les vues principales.
 - Renforcer les tests sur:
   - les permissions,
   - les mises à jour,

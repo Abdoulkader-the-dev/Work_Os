@@ -32,7 +32,7 @@
         </a>
     @else
         <div style="padding:16px;background:white;border:1px solid var(--blue);border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
-            <form method="POST" action="{{ route('boards.items.store', $board) }}" style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:12px;align-items:end;">
+            <form method="POST" action="{{ route('boards.items.store', $board) }}" class="create-task-grid" style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:12px;align-items:end;">
                 @csrf
                 <input type="hidden" name="redirect_view" value="{{ $viewName }}">
 
@@ -41,7 +41,7 @@
                     <input type="hidden" name="redirect_year" value="{{ $taskContext['year'] ?? '' }}">
                 @endif
 
-                <label style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+                <label style="display:flex;flex-direction:column;gap:6px;min-width:0;grid-column:span 4;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Tâche</span>
                     <input type="text"
                            name="name"
@@ -52,7 +52,7 @@
                            style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
                 </label>
 
-                <label style="display:flex;flex-direction:column;gap:6px;">
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:span 2;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Groupe</span>
                     <select name="group_id"
                             style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;">
@@ -66,7 +66,7 @@
                     </select>
                 </label>
 
-                <label style="display:flex;flex-direction:column;gap:6px;">
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:span 2;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Statut</span>
                     <select name="status"
                             style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;">
@@ -76,7 +76,7 @@
                     </select>
                 </label>
 
-                <label style="display:flex;flex-direction:column;gap:6px;">
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:span 2;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Deadline</span>
                     <input type="date"
                            name="deadline"
@@ -84,7 +84,7 @@
                            style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
                 </label>
 
-                <div style="display:flex;gap:8px;align-items:end;">
+                <div style="display:flex;gap:8px;align-items:end;grid-column:span 2;">
                     <button type="submit" class="btn-primary" style="height:42px;">
                         Créer
                     </button>
@@ -94,7 +94,7 @@
                     </a>
                 </div>
 
-                <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 2;">
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:1 / span 6;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Livrable</span>
                     <input type="text"
                            name="deliverable"
@@ -103,7 +103,7 @@
                            style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;">
                 </label>
 
-                <label style="display:flex;flex-direction:column;gap:6px;">
+                <label style="display:flex;flex-direction:column;gap:6px;grid-column:span 2;">
                     <span style="font-size:12px;font-weight:600;color:var(--text-2);">Priorité</span>
                     <select name="priority"
                             style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;background:white;outline:none;">
@@ -113,7 +113,7 @@
                     </select>
                 </label>
 
-                <div style="grid-column:1 / span 5;" wire:ignore>
+                <div style="grid-column:1 / span 12;" wire:ignore>
                     <div style="display:flex;flex-direction:column;gap:6px;">
                         <span style="font-size:12px;font-weight:600;color:var(--text-2);">Description</span>
                         <div x-data
@@ -132,10 +132,26 @@
                     </div>
                 </div>
 
-                <div style="grid-column:4 / span 2;font-size:11px;color:var(--text-3);display:flex;align-items:center;justify-content:flex-end;">
+                <div style="grid-column:1 / span 12;font-size:11px;color:var(--text-3);display:flex;align-items:center;justify-content:flex-end;">
                     La tâche sera disponible immédiatement dans Tableau, Kanban et Calendrier.
                 </div>
             </form>
         </div>
     @endif
 </div>
+
+<style>
+@media (max-width: 900px) {
+    .create-task-grid, .create-task-grid > * {
+        grid-column: 1 / -1 !important;
+    }
+}
+@media (max-width: 768px) {
+    .create-task-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .create-task-grid > * {
+        grid-column: 1 / -1 !important;
+    }
+}
+</style>

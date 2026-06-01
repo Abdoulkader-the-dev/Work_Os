@@ -3,7 +3,7 @@
 @section('page-title', 'Réunions')
 
 @section('topbar-action')
-    <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate>
+    <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate data-tour-id="meeting-create">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
@@ -21,7 +21,7 @@
     </div>
 
     {{-- ── TOOLBAR ── --}}
-    <div class="flex-between flex-wrap" style="gap:12px;">
+    <div class="flex-between flex-wrap" style="gap:12px;" data-tour-id="meeting-toolbar">
 
         {{-- Search --}}
         <div class="search-box" style="flex:1;min-width:220px;max-width:360px;">

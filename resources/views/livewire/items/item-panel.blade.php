@@ -15,6 +15,7 @@
     <div x-cloak
          x-show="$wire.isOpen"
          x-transition.opacity.duration.180ms
+         class="item-panel"
          style="position:absolute;right:0;top:0;height:100%;width:520px;background:white;border-left:1px solid var(--border);display:flex;flex-direction:column;box-shadow:-16px 0 48px rgba(0,0,0,0.08);pointer-events:auto;">
 
         @if($item)

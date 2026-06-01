@@ -13,6 +13,7 @@ use App\Livewire\Boards\BoardKanban;
 use App\Livewire\Boards\BoardCalendar;
 use App\Models\Board;
 use App\Models\Notification;
+use App\Models\User;
 use App\Models\Workspace;
 
 // Racine → dashboard
@@ -46,10 +47,12 @@ Route::middleware(['auth'])->group(function () {
                 'current_workspace_id' => $workspace->id,
             ])->save();
 
+            $request->user()->markOnboardingStarted('dashboard');
+
             return $workspace;
         });
 
-        return redirect()->route('dashboard')->with('status', 'workspace-created');
+        return redirect()->route('dashboard')->with('status', 'workspace-created')->with('onboarding', 'start');
     })->name('workspaces.store');
 
     Route::post('/workspaces/{workspace}/switch', function (Request $request, Workspace $workspace) {
@@ -61,6 +64,117 @@ Route::middleware(['auth'])->group(function () {
 
         return redirect()->route('dashboard')->with('status', 'workspace-switched');
     })->name('workspaces.switch');
+
+    Route::patch('/workspaces/{workspace}', function (Request $request, Workspace $workspace) {
+        abort_unless($request->user()->can('update', $workspace), 403);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ], [
+            'name.required' => 'Le nom est requis.',
+        ]);
+
+        $workspace->update([
+            'name' => trim($data['name']),
+        ]);
+
+        return redirect()->route('dashboard')->with('status', 'workspace-updated');
+    })->name('workspaces.update');
+
+    Route::delete('/workspaces/{workspace}', function (Request $request, Workspace $workspace) {
+        abort_unless($request->user()->can('delete', $workspace), 403);
+
+        $user = $request->user();
+        $workspaceId = $workspace->id;
+
+        if ((int) $user->current_workspace_id === (int) $workspaceId) {
+            $fallbackWorkspace = $user->workspaces()->whereKeyNot($workspaceId)->first();
+            $user->forceFill([
+                'current_workspace_id' => $fallbackWorkspace?->id,
+            ])->save();
+        }
+
+        $user->workspaces()->detach($workspaceId);
+        $workspace->delete();
+
+        return redirect()->route('dashboard')->with('status', 'workspace-deleted');
+    })->name('workspaces.destroy');
+
+    Route::post('/workspaces/{workspace}/members', function (Request $request, Workspace $workspace) {
+        abort_unless($request->user()->can('manageMembers', $workspace), 403);
+
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'role' => ['required', 'in:admin,member,reader'],
+        ], [
+            'email.required' => 'L’adresse e-mail est requise.',
+            'email.email' => 'L’adresse e-mail est invalide.',
+            'role.required' => 'Le rôle est requis.',
+        ]);
+
+        $member = User::where('email', $data['email'])->first();
+
+        if (!$member) {
+            return back()->withErrors([
+                'email' => 'Aucun utilisateur ne correspond à cette adresse e-mail.',
+            ], 'workspaceMembers');
+        }
+
+        $workspace->members()->syncWithoutDetaching([
+            $member->id => ['role' => $data['role']],
+        ]);
+
+        if (!$member->current_workspace_id) {
+            $member->forceFill([
+                'current_workspace_id' => $workspace->id,
+            ])->save();
+        }
+
+        return back()->with('status', 'workspace-member-added');
+    })->name('workspaces.members.store');
+
+    Route::patch('/workspaces/{workspace}/members/{user}', function (Request $request, Workspace $workspace, User $user) {
+        abort_unless($request->user()->can('manageMembers', $workspace), 403);
+
+        abort_unless($workspace->members()->whereKey($user->id)->exists(), 404);
+
+        $data = $request->validate([
+            'role' => ['required', 'in:admin,member,reader'],
+        ]);
+
+        if ((int) $workspace->user_id === (int) $user->id) {
+            $data['role'] = 'admin';
+        }
+
+        $workspace->members()->updateExistingPivot($user->id, [
+            'role' => $data['role'],
+        ]);
+
+        return back()->with('status', 'workspace-member-updated');
+    })->name('workspaces.members.update');
+
+    Route::delete('/workspaces/{workspace}/members/{user}', function (Request $request, Workspace $workspace, User $user) {
+        abort_unless($request->user()->can('manageMembers', $workspace), 403);
+
+        abort_unless($workspace->members()->whereKey($user->id)->exists(), 404);
+
+        if ((int) $workspace->user_id === (int) $user->id) {
+            return back()->withErrors([
+                'workspace' => 'Le propriétaire ne peut pas être retiré du workspace.',
+            ], 'workspaceMembers');
+        }
+
+        $workspace->members()->detach($user->id);
+
+        if ((int) $user->current_workspace_id === (int) $workspace->id) {
+            $fallbackWorkspace = $user->workspaces()->whereKeyNot($workspace->id)->first();
+            $user->forceFill([
+                'current_workspace_id' => $fallbackWorkspace?->id,
+            ])->save();
+        }
+
+        return back()->with('status', 'workspace-member-removed');
+    })->name('workspaces.members.destroy');
 
     // Boards
     Route::get('/boards', fn() => view('pages.boards'))->name('boards.index');
@@ -222,6 +336,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/members',       fn() => view('pages.members'))->name('members');
     Route::get('/settings',      fn() => view('pages.settings'))->name('settings');
     Route::get('/notifications', fn() => view('pages.notifications'))->name('notifications.index');
+    Route::post('/tour/complete', function (Request $request) {
+        $request->user()->markOnboardingCompleted();
+        return response()->noContent();
+    })->name('tour.complete');
     Route::post('/notifications/read-all', function (Request $request) {
         Notification::where('user_id', $request->user()->id)
             ->whereNull('read_at')
@@ -242,6 +360,36 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
 });
+
+Route::get('/workspaces/{workspace}/invite', function (Request $request, Workspace $workspace) {
+    abort_unless($request->hasValidSignature(), 403);
+
+    $role = $request->string('role')->toString() ?: 'member';
+    abort_unless(in_array($role, ['admin', 'member', 'reader'], true), 403);
+
+    if ($request->user()) {
+        $workspace->members()->syncWithoutDetaching([
+            $request->user()->id => ['role' => $role],
+        ]);
+
+        if (!$request->user()->current_workspace_id) {
+            $request->user()->forceFill([
+                'current_workspace_id' => $workspace->id,
+            ])->save();
+        }
+
+        return redirect()->route('members')->with('status', 'workspace-invite-accepted');
+    }
+
+    session([
+        'pending_workspace_invite' => [
+            'workspace_id' => $workspace->id,
+            'role' => $role,
+        ],
+    ]);
+
+    return redirect()->route('register')->with('status', 'workspace-invite-pending');
+})->name('workspaces.members.invite')->middleware('signed');
 
 // Auth routes
 require __DIR__.'/auth.php';

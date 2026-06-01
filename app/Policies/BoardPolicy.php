@@ -14,7 +14,7 @@ class BoardPolicy
 
     public function create(User $user): bool
     {
-        return $user->canManageWorkspace($user->activeWorkspace);
+        return $user->canEditWorkspaceContent($user->activeWorkspace);
     }
 
     public function update(User $user, Board $board): bool

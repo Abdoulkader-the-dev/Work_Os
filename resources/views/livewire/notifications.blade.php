@@ -1,15 +1,15 @@
-<div style="display:flex;flex-direction:column;gap:16px;">
+<div role="status" aria-live="polite" style="display:flex;flex-direction:column;gap:16px;">
     <div class="flex-between flex-wrap" style="gap:12px;">
         <div class="text-xs text-3 f-mono">
             {{ $notifications->count() }} notification{{ $notifications->count() > 1 ? 's' : '' }} · {{ $unreadCount }} non lue{{ $unreadCount > 1 ? 's' : '' }}
         </div>
 
         @if($unreadCount > 0)
-            <button wire:click="markAllAsRead" class="btn-primary">Tout marquer lu</button>
+        <button wire:click="markAllAsRead" class="btn-primary" aria-label="Marquer toutes les notifications comme lues">Tout marquer lu</button>
         @endif
     </div>
 
-    <div class="bento-card" style="padding:0;overflow:hidden;">
+    <div class="bento-card" style="padding:0;overflow:hidden;" data-tour-id="notifications-list">
         @forelse($notifications as $notification)
             @php
                 $isUnread = is_null($notification->read_at);
@@ -24,7 +24,8 @@
                 $icon = $iconMap[$notification->type ?? 'default'] ?? $iconMap['default'];
             @endphp
 
-            <div wire:key="notif-{{ $notification->id }}" 
+            <div wire:key="notif-{{ $notification->id }}"
+                 tabindex="0"
                  style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border);background:{{ $isUnread ? 'rgba(0,145,205,0.03)' : 'white' }}; transition: background .3s;">
                 <div style="width:8px;height:8px;border-radius:50%;background:{{ $isUnread ? 'var(--blue)' : 'transparent' }};flex-shrink:0;margin-top:5px;"></div>
                 <div class="flex-center text-sm font-bold" style="width:34px;height:34px;border-radius:50%;flex-shrink:0;background:{{ $icon['color'] }}22;color:{{ $icon['color'] }};">
@@ -42,7 +43,7 @@
                     @endif
                 </div>
                 @if($isUnread)
-                    <button wire:click="markAsRead({{ $notification->id }})" class="icon-btn" style="width:auto;padding:7px 10px;height:auto;font-size:12px;">
+                    <button wire:click="markAsRead({{ $notification->id }})" class="icon-btn" style="width:auto;padding:7px 10px;height:auto;font-size:12px;" aria-label="Marquer cette notification comme lue">
                         Marquer lu
                     </button>
                 @endif

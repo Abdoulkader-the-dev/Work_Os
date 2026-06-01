@@ -26,6 +26,10 @@ class Dashboard extends Component
         $user = auth()->user();
         $this->workspace = $user?->activeWorkspace;
 
+        if ($user && $user->shouldShowOnboarding()) {
+            $user->markOnboardingStarted('dashboard');
+        }
+
         if (!$this->workspace) {
             return view('livewire.dashboard', [
                 'workspace' => null,

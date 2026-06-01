@@ -9,7 +9,7 @@
 @endsection
 
 @section('topbar-action')
-    <a class="btn-primary" href="{{ route('boards.calendar', ['board' => $board, 'createTask' => 1, 'month' => $month, 'year' => $year]) }}">
+    <a class="btn-primary" href="{{ route('boards.calendar', ['board' => $board, 'createTask' => 1, 'month' => $month, 'year' => $year]) }}" data-tour-id="calendar-create-task">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
@@ -34,7 +34,7 @@
     ])
 
     {{-- ── NAVIGATION ── --}}
-    <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;" data-tour-id="calendar-toolbar">
         <div style="display:flex;align-items:center;gap:12px;">
             <button wire:click="prevMonth"
                     style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:white;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-2);transition:all .15s;"
