@@ -26,7 +26,30 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Sur Vercel, le système de fichiers est en lecture seule sauf /tmp.
+        // On redirige les chemins de cache/storage de Laravel vers /tmp.
+        if (env('VERCEL') || (env('APP_ENV') === 'production' && !is_writable(storage_path()))) {
+            $tmpStorage = '/tmp/storage';
+
+            // Crée les sous-dossiers nécessaires s'ils n'existent pas
+            foreach ([
+                $tmpStorage,
+                $tmpStorage . '/app',
+                $tmpStorage . '/app/public',
+                $tmpStorage . '/framework',
+                $tmpStorage . '/framework/cache',
+                $tmpStorage . '/framework/cache/data',
+                $tmpStorage . '/framework/sessions',
+                $tmpStorage . '/framework/views',
+                $tmpStorage . '/logs',
+            ] as $dir) {
+                if (!is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                }
+            }
+
+            $this->app->useStoragePath($tmpStorage);
+        }
     }
 
     /**
