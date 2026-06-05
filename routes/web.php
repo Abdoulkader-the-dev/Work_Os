@@ -76,6 +76,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/meetings/{meeting}/recommendations/{index}', [MeetingController::class, 'removeRecommendation'])->name('meetings.recommendations.destroy');
     Route::post('/meetings/{meeting}/actions', [MeetingController::class, 'addAction'])->name('meetings.actions.store');
     Route::delete('/meetings/{meeting}/actions/{index}', [MeetingController::class, 'removeAction'])->name('meetings.actions.destroy');
+    Route::get('/meetings/{meeting}/pdf', [MeetingController::class, 'exportPdf'])->name('meetings.pdf');
 
     // Autres
     Route::get('/my-tasks',      fn() => view('pages.my-tasks'))->name('my-tasks');

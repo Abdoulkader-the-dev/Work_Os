@@ -289,4 +289,13 @@ class MeetingController extends Controller
 
         return response()->json(['message' => 'Action removed', 'actions' => $actions], 200);
     }
+
+    public function exportPdf(Meeting $meeting)
+    {
+        $this->authorize('view', $meeting);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.meeting', compact('meeting'));
+
+        return $pdf->stream('compte-rendu-' . $meeting->id . '.pdf');
+    }
 }
