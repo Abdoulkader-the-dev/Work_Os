@@ -508,6 +508,10 @@ Variables à définir dans Vercel:
 - `APP_DEBUG=false`
 - `DB_CONNECTION=pgsql`
 - `DB_URL=...` avec l'URL fournie par Supabase
+- `SESSION_DRIVER=cookie`
+- `CACHE_STORE=array`
+- `QUEUE_CONNECTION=sync`
+- `BROADCAST_CONNECTION=log`
 
 Exemples de `DB_URL`:
 
@@ -515,6 +519,9 @@ Exemples de `DB_URL`:
 - pooler transaction: `postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require`
 
 Pour Vercel, le pooler transaction est généralement le meilleur choix pour éviter les soucis de connexions temporaires.
+
+Si tu n'utilises pas encore Reverb ou Pusher en production, garde `BROADCAST_CONNECTION=log`.
+Ça évite qu'une config temps réel incomplète fasse tomber le bootstrap Laravel.
 
 ### Installation propre
 
