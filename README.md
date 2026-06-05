@@ -497,6 +497,25 @@ Si on résume très simplement:
 - Node.js récent avec `npm`
 - Une base de données configurée dans `.env`
 
+### Déploiement Vercel + Supabase
+
+Si tu déploies sur Vercel avec Supabase, utilise une vraie base Postgres et pas le SQLite local.
+
+Variables à définir dans Vercel:
+
+- `APP_KEY`
+- `APP_URL`
+- `APP_DEBUG=false`
+- `DB_CONNECTION=pgsql`
+- `DB_URL=...` avec l'URL fournie par Supabase
+
+Exemples de `DB_URL`:
+
+- connexion directe: `postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres?sslmode=require`
+- pooler transaction: `postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require`
+
+Pour Vercel, le pooler transaction est généralement le meilleur choix pour éviter les soucis de connexions temporaires.
+
 ### Installation propre
 
 1. Installer les dépendances PHP.
