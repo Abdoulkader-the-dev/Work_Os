@@ -38,10 +38,17 @@ class BoardKanban extends Component
         if (!in_array($status, $allowed)) return;
 
         $item = $this->board->items()->findOrFail($itemId);
+        if (!Item::canTransitionStatus($item->status, $status)) return;
         $item->update(['status' => $status]);
 
         foreach (array_values($targetIds) as $index => $id) {
-            $this->board->items()->whereKey($id)->update([
+            $targetItem = $this->board->items()->whereKey($id)->first();
+
+            if (!$targetItem || !Item::canTransitionStatus($targetItem->status, $status)) {
+                return;
+            }
+
+            $targetItem->update([
                 'status' => $status,
                 'order'  => $index + 1,
             ]);
@@ -55,7 +62,7 @@ class BoardKanban extends Component
             }
         }
 
-        BoardUpdated::dispatch($this->board->fresh(), 'item.moved', ['item_id' => $itemId, 'status' => $status]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.moved', ['item_id' => $itemId, 'status' => $status]))->toOthers();
     }
 
     public function openItemPanel(int $itemId): void
@@ -66,6 +73,7 @@ class BoardKanban extends Component
     public function addItemToColumn(string $status): void
     {
         $this->authorize('update', $this->board);
+        if (!in_array($status, Item::allowedStatuses(), true)) return;
         $firstGroup = $this->board->groups()->orderBy('order')->first();
         if (!$firstGroup) {
             $firstGroup = $this->board->groups()->create([
@@ -80,7 +88,7 @@ class BoardKanban extends Component
             'order'  => $firstGroup->items()->where('status', $status)->max('order') + 1,
         ]);
         $this->dispatch('open-item-panel', itemId: $item->id);
-        BoardUpdated::dispatch($this->board->fresh(), 'item.created', ['item_id' => $item->id]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.created', ['item_id' => $item->id]))->toOthers();
     }
 
     protected function getListeners(): array

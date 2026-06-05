@@ -6,19 +6,32 @@ use App\Models\Board;
 use App\Models\Item;
 use App\Models\Meeting;
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class Dashboard extends Component
 {
     public $workspace;
     
-    #[On('echo:board-updated,BoardUpdated')]
-    #[On('meeting-saved')]
-    #[On('action-converted')]
-    #[On('workspace-changed')]
     public function refresh()
     {
         // Re-render
+    }
+
+    protected function getListeners(): array
+    {
+        $workspaceId = auth()->user()?->activeWorkspace?->id;
+
+        $listeners = [
+            'meeting-saved' => 'refresh',
+            'action-converted' => 'refresh',
+            'workspace-changed' => 'refresh',
+        ];
+
+        if ($workspaceId) {
+            $listeners["echo-private:workspaces.{$workspaceId},BoardUpdated"] = 'refresh';
+            $listeners["echo-private:workspaces.{$workspaceId},MeetingUpdated"] = 'refresh';
+        }
+
+        return $listeners;
     }
 
     public function render()
@@ -114,7 +127,13 @@ class Dashboard extends Component
             ]);
 
         $recentMeetings = Meeting::query()
-            ->where('user_id', $user?->id)
+            ->where(function ($query) use ($user) {
+                $query->where('workspace_id', $this->workspace?->id)
+                    ->orWhere(function ($legacy) use ($user) {
+                        $legacy->whereNull('workspace_id')
+                            ->where('user_id', $user?->id);
+                    });
+            })
             ->latest('date')
             ->take(3)
             ->get()

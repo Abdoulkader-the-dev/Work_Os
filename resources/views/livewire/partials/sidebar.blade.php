@@ -25,7 +25,7 @@
                 <rect x="1" y="8.5" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
                 <rect x="8.5" y="8.5" width="6.5" height="6.5" rx="1.5" fill="currentColor"/>
             </svg>
-            Dashboard
+            Tableau de bord
         </a>
 
         <a href="{{ route('boards.index') }}" class="nav-item {{ request()->routeIs('boards.*') ? 'active' : '' }}" wire:navigate data-tour-id="sidebar-boards">
@@ -34,7 +34,7 @@
                 <rect x="1" y="6.5" width="14" height="3" rx="1" fill="currentColor"/>
                 <rect x="1" y="12" width="9" height="3" rx="1" fill="currentColor"/>
             </svg>
-            Boards
+            Tableaux
         </a>
 
         <a href="{{ route('meetings.index') }}" class="nav-item {{ request()->routeIs('meetings.*') ? 'active' : '' }}" wire:navigate data-tour-id="sidebar-meetings">
@@ -80,14 +80,16 @@
 
         <div class="nav-section-label">Système</div>
 
-        <a href="{{ route('members') }}" class="nav-item {{ request()->routeIs('members') ? 'active' : '' }}" wire:navigate data-tour-id="sidebar-members">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
-                <circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M11 7c1.66 0 3 1.34 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            Membres
-        </a>
+        @if(($activeRole ?? null) !== 'reader')
+            <a href="{{ route('members') }}" class="nav-item {{ request()->routeIs('members') ? 'active' : '' }}" wire:navigate data-tour-id="sidebar-members">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
+                    <circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M1 14c0-2.76 2.24-5 5-5s5 2.24 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    <path d="M11 7c1.66 0 3 1.34 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Membres
+            </a>
+        @endif
 
         <a href="{{ route('settings') }}" class="nav-item {{ request()->routeIs('settings.*') ? 'active' : '' }}" wire:navigate data-tour-id="sidebar-settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="opacity:.55;flex-shrink:0;">
@@ -100,7 +102,7 @@
     </nav>
 
     <div class="sidebar-footer">
-        <div class="nav-section-label" style="padding:0 2px;margin-bottom:6px;">Workspace</div>
+        <div class="nav-section-label" style="padding:0 2px;margin-bottom:6px;">Espace de travail</div>
         @php
             $activeWorkspace = auth()->user()?->activeWorkspace;
             $activeRole = auth()->user()?->workspaceRole($activeWorkspace);
@@ -120,12 +122,12 @@
              style="cursor:pointer;user-select:none;">
             <div style="width:8px;height:8px;border-radius:50%;background:{{ auth()->user()?->activeWorkspace?->color ?? 'var(--blue)' }};flex-shrink:0;"></div>
             <span class="text-sm font-medium" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                {{ $activeWorkspace?->name ?? auth()->user()?->workspaces()->first()?->name ?? 'Aucun workspace' }}
+                {{ $activeWorkspace?->name ?? auth()->user()?->workspaces()->first()?->name ?? 'Aucun espace de travail' }}
             </span>
             @if($activeRole)
-                <span style="font-size:10px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--text-2);flex-shrink:0;">
-                    {{ $roleLabel }}
-                </span>
+            <span class="role-pill" style="flex-shrink:0;">
+                {{ $roleLabel }}
+            </span>
             @endif
             <svg id="ws-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" style="color:var(--text-3);flex-shrink:0;transition:transform .2s;">
                 <path d="M3 5l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -136,7 +138,8 @@
         <div id="workspace-menu"
              data-dropdown-menu
              hidden
-             style="position:absolute;bottom:72px;left:12px;right:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 -8px 32px rgba(0,0,0,0.12);padding:6px;z-index:50;max-height:380px;overflow-y:auto;scrollbar-width:thin;">
+             class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--top"
+             style="left:12px;right:12px;bottom:72px;z-index:50;max-height:380px;overflow-y:auto;scrollbar-width:thin;">
 
             {{-- Liste des workspaces existants --}}
             @php $currentWsId = auth()->user()?->activeWorkspace?->id ?? auth()->user()?->workspaces()->first()?->id; @endphp
@@ -147,10 +150,8 @@
                       style="margin:0;">
                     @csrf
                     <button type="submit"
-                            class="flex-center"
-                            style="width:100%;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;transition:background .12s;border:none;background:{{ $ws->id === $currentWsId ? 'var(--bg)' : 'transparent' }};font-weight:{{ $ws->id === $currentWsId ? '600' : '400' }};font-family:'DM Sans',sans-serif;color:var(--text-1);text-align:left;"
-                            onmouseover="this.style.background='var(--bg)'"
-                            onmouseout="this.style.background='{{ $ws->id === $currentWsId ? 'var(--bg)' : 'transparent' }}'">
+                            class="surface-menu__item"
+                            style="background:{{ $ws->id === $currentWsId ? 'var(--bg)' : 'transparent' }};font-weight:{{ $ws->id === $currentWsId ? '600' : '400' }};">
                         <div style="width:8px;height:8px;border-radius:50%;background:{{ $ws->color ?? 'var(--blue)' }};flex-shrink:0;"></div>
                         <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $ws->name }}</span>
                         <svg class="ws-submit-spinner animate-spin" width="12" height="12" viewBox="0 0 12 12" fill="none" hidden style="color:var(--text-3);">
@@ -169,18 +170,16 @@
             {{-- Séparateur --}}
             <div style="height:1px;background:var(--border);margin:4px 2px;"></div>
 
-            @if(($activeRole ?? null) === 'admin')
+            @if(($activeRole ?? null) === 'admin' && $activeWorkspace)
             {{-- Bouton Créer un workspace --}}
             <div id="ws-btn-create">
                 <button type="button"
                         onclick="wsShowCreating(event)"
-                        class="flex-center"
-                        style="width:100%;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;color:var(--text-2);transition:background .12s;"
-                        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                        class="surface-menu__item">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                     </svg>
-                    Créer un workspace
+                    Créer un espace de travail
                 </button>
             </div>
 
@@ -188,19 +187,17 @@
             <div id="ws-btn-edit">
                 <button type="button"
                         onclick="wsShowEditing(event)"
-                        class="flex-center"
-                        style="width:100%;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;color:var(--text-2);transition:background .12s;"
-                        onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                        class="surface-menu__item">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                         <path d="M2 10.5V12h1.5L11.8 3.7 10.3 2.2 2 10.5z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    Renommer ce workspace
+                    Renommer cet espace de travail
                 </button>
             </div>
             @endif
 
             {{-- Supprimer workspace courant --}}
-            @if(($activeRole ?? null) === 'admin')
+            @if(($activeRole ?? null) === 'admin' && $activeWorkspace)
             <div id="ws-btn-delete">
                 <form method="POST"
                       action="{{ route('workspaces.destroy', auth()->user()?->activeWorkspace?->id) }}"
@@ -209,9 +206,7 @@
                     @csrf
                     @method('DELETE')
                     <button type="submit"
-                            class="flex-center"
-                            style="width:100%;gap:8px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;background:none;border:none;font-family:'DM Sans',sans-serif;color:#dc2626;transition:background .12s;"
-                            onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
+                            class="surface-menu__item surface-menu__item--danger">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <path d="M2.5 4h9M5 4V2.8h4V4m-5 0v7h6V4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -271,46 +266,48 @@
             </div>
 
             {{-- Formulaire de modification --}}
-            <div id="ws-editing-form" hidden style="padding:2px 2px 4px;">
-                <form method="POST"
-                      action="{{ route('workspaces.update', auth()->user()?->activeWorkspace?->id) }}"
-                      onsubmit="return wsSubmitEdit(event)"
-                      style="margin:0;">
-                    @csrf
-                    @method('PATCH')
-                    <input type="text"
-                           id="ws-edit-name-input"
-                           name="name"
-                           value="{{ old('name', auth()->user()?->activeWorkspace?->name) }}"
-                           placeholder="Nom du workspace..."
-                           autocomplete="off"
-                           onkeydown="wsEditInputKeydown(event)"
-                           style="width:100%;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg);outline:none;color:var(--text-1);margin-bottom:4px;transition:border-color .15s;box-sizing:border-box;"
-                           onfocus="this.style.borderColor='var(--blue)'"
-                           onblur="this.style.borderColor='var(--border)'">
+            @if($activeWorkspace)
+                <div id="ws-editing-form" hidden style="padding:2px 2px 4px;">
+                    <form method="POST"
+                          action="{{ route('workspaces.update', $activeWorkspace) }}"
+                          onsubmit="return wsSubmitEdit(event)"
+                          style="margin:0;">
+                        @csrf
+                        @method('PATCH')
+                        <input type="text"
+                               id="ws-edit-name-input"
+                               name="name"
+                               value="{{ old('name', $activeWorkspace?->name) }}"
+                               placeholder="Nom du workspace..."
+                               autocomplete="off"
+                               onkeydown="wsEditInputKeydown(event)"
+                               style="width:100%;padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;border:1px solid var(--border);border-radius:8px;background:var(--bg);outline:none;color:var(--text-1);margin-bottom:4px;transition:border-color .15s;box-sizing:border-box;"
+                               onfocus="this.style.borderColor='var(--blue)'"
+                               onblur="this.style.borderColor='var(--border)'">
 
-                    @error('name')
-                        <div style="color:#dc2626;font-size:11px;margin-bottom:6px;padding-left:4px;">{{ $message }}</div>
-                    @enderror
+                        @error('name')
+                            <div style="color:#dc2626;font-size:11px;margin-bottom:6px;padding-left:4px;">{{ $message }}</div>
+                        @enderror
 
-                    <div class="flex-center" style="gap:6px;">
-                        <button type="submit"
-                                id="ws-edit-btn"
-                                style="flex:1;padding:7px 10px;background:var(--text-1);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;"
-                                onmouseover="this.style.background='#2a2a28'"
-                                onmouseout="this.style.background='var(--text-1)'">
-                            <span class="ws-edit-label">Enregistrer</span>
-                        </button>
-                        <button type="button"
-                                onclick="wsCancelEditing(event)"
-                                style="padding:7px 10px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--text-2);transition:background .15s;"
-                                onmouseover="this.style.background='var(--bg)'"
-                                onmouseout="this.style.background=''">
-                            Annuler
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        <div class="flex-center" style="gap:6px;">
+                            <button type="submit"
+                                    id="ws-edit-btn"
+                                    style="flex:1;padding:7px 10px;background:var(--text-1);color:white;border:none;border-radius:7px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:6px;"
+                                    onmouseover="this.style.background='#2a2a28'"
+                                    onmouseout="this.style.background='var(--text-1)'">
+                                <span class="ws-edit-label">Enregistrer</span>
+                            </button>
+                            <button type="button"
+                                    onclick="wsCancelEditing(event)"
+                                    style="padding:7px 10px;background:none;border:1px solid var(--border);border-radius:7px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--text-2);transition:background .15s;"
+                                    onmouseover="this.style.background='var(--bg)'"
+                                    onmouseout="this.style.background=''">
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            @endif
 
             @if(($activeRole ?? null) === 'admin' && $activeWorkspace)
             <div style="height:1px;background:var(--border);margin:4px 2px;"></div>
@@ -322,12 +319,12 @@
                 );
             @endphp
             <div style="padding:2px 2px 4px;">
-                <div style="font-size:11px;color:var(--text-3);margin:0 4px 6px;">Lien d’invitation</div>
+                <div class="surface-menu__title" style="margin:0 4px 6px;">Lien d’invitation</div>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <input type="text" id="workspace-invite-link" value="{{ $inviteUrl }}" readonly style="flex:1;min-width:0;padding:8px 10px;font-size:12px;font-family:'DM Mono',monospace;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-1);">
-                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('workspace-invite-link').value)" style="padding:8px 10px;border:none;border-radius:8px;background:var(--text-1);color:#fff;font-size:12px;cursor:pointer;">Copier</button>
+                    <input type="text" id="workspace-invite-link" value="{{ $inviteUrl }}" readonly class="form-control form-control--soft" style="flex:1;min-width:0;font-family:'DM Mono',monospace;font-size:12px;">
+                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('workspace-invite-link').value)" class="btn-primary" style="height:42px;padding:0 12px;">Copier</button>
                 </div>
-                <div style="font-size:11px;color:var(--text-3);margin:6px 4px 0;">Une personne non connectée peut aussi ouvrir ce lien: elle sera invitée à créer un compte ou se connecter, puis rejoindra le workspace.</div>
+                <div class="menu-note" style="margin:6px 4px 0;">Une personne non connectée peut aussi ouvrir ce lien: elle sera invitée à créer un compte ou se connecter, puis rejoindra le workspace.</div>
             </div>
             @endif
 

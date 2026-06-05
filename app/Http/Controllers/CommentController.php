@@ -13,16 +13,7 @@ class CommentController extends Controller
 
     public function index(Request $request, Item $item)
     {
-        // Check if user has access to the workspace
-        $workspace = $item->group->board->workspace;
-
-        $hasAccess = $workspace->members()
-            ->where('user_id', $request->user()->id)
-            ->exists();
-
-        if (!$hasAccess) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        abort_unless($request->user()->can('view', $item->group->board), 403);
 
         $comments = $item->comments()->with('user')->latest()->get();
 
@@ -53,19 +44,7 @@ class CommentController extends Controller
 
     public function destroy(Request $request, Comment $comment)
     {
-        $workspace = $request->user()->activeWorkspace;
-
-        $isAdmin = $workspace && $workspace->members()
-            ->where('user_id', $request->user()->id)
-            ->where('role', 'admin')
-            ->exists();
-
-        $isAuthor = $comment->user_id === $request->user()->id;
-
-        // Author OR admin can delete
-        if (!$isAuthor && !$isAdmin) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        abort_unless($request->user()->can('delete', $comment), 403);
 
         $comment->delete();
 

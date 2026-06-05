@@ -8,6 +8,7 @@ use App\Models\Board;
 use App\Models\Group;
 use App\Models\Item;
 use App\Models\Meeting;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Validator;
 use Livewire\Component;
@@ -17,6 +18,7 @@ class MeetingEditor extends Component
     use AuthorizesRequests;
     // ── Méta ──────────────────────────────────────────────
     public ?int    $meetingId   = null;
+    public ?int    $workspaceId = null;
     public string  $title       = '';
     public string  $date        = '';
     public string  $attendeeInput = '';
@@ -33,11 +35,14 @@ class MeetingEditor extends Component
 
     public function mount(?int $meetingId = null): void
     {
+        $workspace = auth()->user()?->activeWorkspace;
+
         if ($meetingId) {
             $meeting = Meeting::findOrFail($meetingId);
             $this->authorize('update', $meeting);
 
             $this->meetingId       = $meeting->id;
+            $this->workspaceId     = $meeting->workspace_id ?? $workspace?->id;
             $this->title           = $meeting->title;
             $this->date            = $meeting->date->format('Y-m-d');
             $this->attendees       = $meeting->attendees ?? [];
@@ -46,6 +51,7 @@ class MeetingEditor extends Component
             $this->actions         = $meeting->actions ?: [];
         } else {
             $this->authorize('create', Meeting::class);
+            $this->workspaceId = $workspace?->id;
             $this->date = now()->format('Y-m-d');
         }
 
@@ -119,8 +125,11 @@ class MeetingEditor extends Component
         if (!$action || empty(trim($action['text'] ?? ''))) return;
         if ($action['converted'] ?? false) return;
 
+        $workspace = auth()->user()?->activeWorkspace;
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
         $board = Board::query()
-            ->where('workspace_id', auth()->user()?->activeWorkspace?->id)
+            ->where('workspace_id', $workspace->id)
             ->first();
         if (!$board) return;
 
@@ -139,6 +148,8 @@ class MeetingEditor extends Component
         ]);
 
         if (!empty($action['assignee_id'])) {
+            $assignee = User::find($action['assignee_id']);
+            abort_unless($assignee && $assignee->belongsToWorkspace($workspace), 422, 'L\'assigné doit appartenir au workspace.');
             $item->assignees()->attach($action['assignee_id']);
         }
 
@@ -147,12 +158,15 @@ class MeetingEditor extends Component
 
         $this->saveMeeting();
         $this->dispatch('action-converted', itemId: $item->id, itemName: $item->name);
-        BoardUpdated::dispatch($board->fresh(), 'item.created', ['item_id' => $item->id]);
+        broadcast(new BoardUpdated($board->fresh(), 'item.created', ['item_id' => $item->id]))->toOthers();
     }
 
     // ── Sauvegarde ────────────────────────────────────────
     public function saveMeeting(): void
     {
+        $workspace = auth()->user()?->activeWorkspace;
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
         $rules = [
             'title' => ['required', 'string', 'min:2', 'max:255'],
             'date'  => ['required', 'date'],
@@ -170,14 +184,40 @@ class MeetingEditor extends Component
             'actions.*.item_id' => ['nullable', 'integer', 'exists:items,id'],
         ];
 
-        Validator::make([
+        $validator = Validator::make([
             'title' => $this->title,
             'date' => $this->date,
             'attendees' => $this->attendees,
             'bilan' => $this->bilan,
             'recommendations' => $this->recommendations,
             'actions' => $this->actions,
-        ], $rules)->validate();
+        ], $rules);
+
+        $validator->after(function ($validator) use ($workspace) {
+            foreach ($this->actions as $index => $action) {
+                $assigneeId = $action['assignee_id'] ?? null;
+                if ($assigneeId) {
+                    $assignee = User::find($assigneeId);
+                    if (!$assignee || !$assignee->belongsToWorkspace($workspace)) {
+                        $validator->errors()->add("actions.$index.assignee_id", 'L\'assigné doit appartenir au workspace.');
+                    }
+                }
+
+                $itemId = $action['item_id'] ?? null;
+                if ($itemId) {
+                    $validItem = Item::query()
+                        ->whereKey($itemId)
+                        ->whereHas('group.board', fn ($query) => $query->where('workspace_id', $workspace->id))
+                        ->exists();
+
+                    if (!$validItem) {
+                        $validator->errors()->add("actions.$index.item_id", 'La tâche liée doit appartenir au workspace.');
+                    }
+                }
+            }
+        });
+
+        $validator->validate();
 
         $data = [
             'title'           => $this->title,
@@ -187,6 +227,7 @@ class MeetingEditor extends Component
             'recommendations' => array_filter($this->recommendations),
             'actions'         => $this->actions,
             'user_id'         => auth()->id(),
+            'workspace_id'    => $this->workspaceId ?? $workspace->id,
         ];
 
         if ($this->meetingId) {

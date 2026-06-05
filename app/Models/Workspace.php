@@ -16,6 +16,7 @@ class Workspace extends Model
     return $this->belongsToMany(User::class, 'workspace_user')->withPivot('role'); 
 }
     public function boards()  { return $this->hasMany(Board::class); }
+    public function meetings() { return $this->hasMany(Meeting::class); }
 
     public function hasMember(User $user): bool
     {

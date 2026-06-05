@@ -32,11 +32,9 @@ class CommentPolicy
 
     public function delete(User $user, Comment $comment): bool
     {
-        // Author can delete, or admin can delete any comment
-        $workspace = $comment->item->group->board->workspace;
-
         $isAuthor = (int) $comment->user_id === (int) $user->id;
-        $isAdmin = $workspace->members()
+        $workspace = $user->activeWorkspace;
+        $isAdmin = $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->where('role', 'admin')
             ->exists();

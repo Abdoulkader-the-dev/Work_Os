@@ -10,17 +10,17 @@
     @if (session('status'))
         <div class="badge s-done" style="margin-bottom:14px;padding:12px 14px;width:100%;justify-content:flex-start;border-radius:10px;">
             {{ match(session('status')) {
-                'board-updated' => 'Board mis à jour.',
-                'board-deleted' => 'Board supprimé.',
+                'board-updated' => 'Tableau mis à jour.',
+                'board-deleted' => 'Tableau supprimé.',
                 default => session('status'),
             } }}
         </div>
     @endif
 
     @if(!$workspace)
-        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
-            <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucun workspace actif</div>
-            <div class="text-sm">Créez ou sélectionnez un workspace pour gérer vos boards.</div>
+        <div class="empty-state bento-card">
+            <div class="empty-state__title">Aucun workspace actif</div>
+            <div class="empty-state__copy">Créez ou sélectionnez un workspace pour gérer vos boards.</div>
         </div>
     @else
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;">
@@ -117,10 +117,9 @@
                 @endcan
             </div>
         @empty
-            <div style="grid-column:1/-1;text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
-                <div style="font-size:40px;margin-bottom:12px;">🗂️</div>
-                <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucun board</div>
-                <div class="text-sm">Crée ton premier board pour organiser les tâches du workspace.</div>
+            <div class="empty-state bento-card" style="grid-column:1/-1;">
+                <div class="empty-state__title">Aucun board</div>
+                <div class="empty-state__copy">Crée ton premier board pour organiser les tâches du workspace.</div>
             </div>
         @endforelse
         </div>

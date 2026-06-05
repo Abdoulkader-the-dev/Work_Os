@@ -9,29 +9,28 @@
 
     @if(session('status') === 'workspace-created')
         <div class="badge s-done" style="padding:12px 14px;width:100%;justify-content:flex-start;border-radius:10px;">
-            Workspace créé et activé.
+            Espace de travail créé et activé.
         </div>
     @endif
 
     @if(!$workspace)
-        {{-- Empty State --}}
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;text-align:center;">
-            <div style="width:80px;height:80px;background:var(--blue-light);border-radius:24px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;">
+        <x-empty-state 
+            title="Bienvenue sur UniPod" 
+            description="Commencez par créer votre premier workspace pour organiser vos projets, vos tâches et vos réunions."
+            style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;"
+        >
+            <x-slot:icon>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" style="color:var(--blue);">
                     <path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" stroke="currentColor" stroke-width="1.5"/>
                     <path d="M12 11v6M9 14h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
                 </svg>
-            </div>
-            <h2 class="text-2xl font-semibold text-1" style="margin-bottom:12px;">Bienvenue sur UniPod</h2>
-            <p class="text-md text-3" style="max-width:400px;margin-bottom:32px;line-height:1.6;">
-                Commencez par créer votre premier workspace pour organiser vos projets, vos tâches et vos réunions.
-            </p>
+            </x-slot:icon>
             <button type="button" 
                     onclick="wsShowCreating(event); document.querySelector('[data-dropdown-trigger=workspace-menu]').click()"
                     class="btn-primary" style="padding:12px 24px;font-size:14px;">
                 Créer mon premier workspace
             </button>
-        </div>
+        </x-empty-state>
     @else
         <div class="flex-between flex-wrap" style="gap:14px;">
             <div>
@@ -62,7 +61,7 @@
             <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
                 <div class="bento-card flex-center" style="gap:16px;padding:14px 20px;">
                     <div>
-                        <div class="text-sm font-medium">Workspace actif</div>
+                        <div class="text-sm font-medium">Espace de travail actif</div>
                         <div class="text-xl font-semibold text-1" style="letter-spacing:-0.02em;margin-top:2px;">
                             {{ $workspace?->name ?? 'Aucun workspace' }}
                         </div>
@@ -113,20 +112,6 @@
 
             <x-kpi-card
                 label="Créées cette semaine"
-                value="{{ str_pad((string) $tasksThisWeek, 2, '0', STR_PAD_LEFT) }}"
-                delta="{{ $weeklyDelta >= 0 ? '+' : '' }}{{ $weeklyDelta }}% vs semaine passée"
-                deltaColor="{{ $weeklyDelta >= 0 ? '#16a34a' : '#dc2626' }}"
-            />
-
-            <x-kpi-card
-                label="Boards actifs"
-                value="{{ str_pad((string) $activeBoards, 2, '0', STR_PAD_LEFT) }}"
-                subvalue="Workspace courant"
-            />
-
-            <x-kpi-card
-                label="À traiter cette semaine"
-                value="{{ str_pad((string) $tasksDueThisWeek, 2, '0', STR_PAD_LEFT) }}"
                 subvalue="Tâches avec deadline"
             />
         </div>
@@ -155,7 +140,7 @@
                             </span>
                         </div>
                     @empty
-                        <div style="text-align:center;padding:32px 0;color:var(--text-3);font-size:13px;">
+                <div style="text-align:center;padding:32px 0;color:var(--text-3);font-size:13px;">
                             Aucune activité récente
                         </div>
                     @endforelse
@@ -163,7 +148,7 @@
             </div>
 
             <div class="bento-card" style="padding:20px;display:flex;flex-direction:column;">
-                <x-section-header title="Boards" link="{{ route('boards.index') }}" linkText="Voir tout" wire:navigate />
+                <x-section-header title="Tableaux" link="{{ route('boards.index') }}" linkText="Voir tout" wire:navigate />
 
                 <div style="flex:1;display:flex;flex-direction:column;gap:2px;">
                     @forelse($boardsPreview as $board)
@@ -177,7 +162,7 @@
                             <span class="text-xs text-3 f-mono" style="flex-shrink:0;">{{ $board->items_count }}</span>
                         </a>
                     @empty
-                        <div style="text-align:center;padding:24px 0;color:var(--text-3);font-size:13px;">Aucun board actif</div>
+                    <div style="text-align:center;padding:24px 0;color:var(--text-3);font-size:13px;">Aucun tableau actif</div>
                     @endforelse
                 </div>
             </div>
@@ -238,7 +223,7 @@
                                 $memberTaskQuery = $member->items()->whereHas('group.board', fn ($query) => $query->where('workspace_id', $workspace?->id));
                                 $memberOpenTasks = (clone $memberTaskQuery)->where('status', '!=', 'done')->count();
                                 $memberInProgress = (clone $memberTaskQuery)->where('status', 'progress')->count();
-                                $memberRole = $workspace && $workspace->user_id === $member->id ? 'Owner' : ($member->pivot->role ?? 'Membre');
+                                $memberRole = $workspace && $workspace->user_id === $member->id ? 'Propriétaire' : ($member->pivot->role ?? 'Membre');
                             @endphp
                             <tr style="transition:background .15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
                                 <td>

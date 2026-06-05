@@ -14,16 +14,20 @@
     </div>
 
     @if(!$workspace)
-        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
-            <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucun workspace actif</div>
-            <div class="text-sm">Créez ou sélectionnez un workspace pour voir vos tâches.</div>
-        </div>
+        <x-empty-state 
+            title="Aucun workspace actif" 
+            description="Créez ou sélectionnez un workspace pour voir vos tâches." 
+            style="border:1px dashed var(--border-md);border-radius:14px;background:white;"
+        />
     @elseif($items->isEmpty())
-        <div style="text-align:center;padding:72px 24px;color:var(--text-3);">
-            <div style="font-size:40px;margin-bottom:12px;">🗂️</div>
-            <div class="text-md font-semibold text-1" style="margin-bottom:6px;">Aucune tâche assignée</div>
-            <div class="text-sm">Tes tâches apparaîtront ici dès qu'elles te seront attribuées.</div>
-        </div>
+        <x-empty-state 
+            title="Aucune tâche assignée" 
+            description="Tes tâches apparaîtront ici dès qu'elles te seront attribuées."
+        >
+            <x-slot:icon>
+                <div style="font-size:40px;">🗂️</div>
+            </x-slot:icon>
+        </x-empty-state>
     @else
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;" data-tour-id="my-tasks-list">
             @foreach($items as $item)
@@ -34,7 +38,7 @@
                                 {{ $item->name }}
                             </div>
                             <div class="text-xs text-3 f-mono" style="margin-top:5px;">
-                                {{ $item->group->board->name ?? 'Sans board' }} / {{ $item->group->name ?? 'Sans groupe' }}
+                                {{ $item->group->board->name ?? 'Sans tableau' }} / {{ $item->group->name ?? 'Sans groupe' }}
                             </div>
                         </div>
                         <x-status-badge status="{{ $item->status }}" style="font-size:11px;" />
@@ -53,8 +57,8 @@
                         @if($item->group?->board)
                             <a href="{{ route('boards.show', $item->group->board) }}"
                                class="text-sm font-medium" style="color:var(--blue);text-decoration:none;"
-                               aria-label="Ouvrir le board {{ $item->group->board->name ?? '' }}">
-                                Ouvrir le board →
+                               aria-label="Ouvrir le tableau {{ $item->group->board->name ?? '' }}">
+                                Ouvrir le tableau →
                             </a>
                         @endif
                     </div>

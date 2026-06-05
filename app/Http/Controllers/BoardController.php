@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Events\BoardUpdated;
 use App\Http\Requests\BoardStoreRequest;
 use App\Http\Requests\BoardUpdateRequest;
+use App\Http\Requests\GroupStoreRequest;
 use App\Http\Requests\ItemStoreRequest;
 use App\Models\Board;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class BoardController extends Controller
 
         $board = Board::create([
             'name' => $data['name'],
-            'color' => $data['color'] ?: '#0091CD',
+            'color' => $data['color'] ?? '#0091CD',
             'workspace_id' => $workspace->id,
         ]);
 
@@ -32,10 +33,10 @@ class BoardController extends Controller
 
         $board->update([
             'name' => trim($data['name']),
-            'color' => $data['color'] ?: $board->color,
+            'color' => $data['color'] ?? $board->color,
         ]);
 
-        BoardUpdated::dispatch($board->fresh(), 'board.updated', ['board_id' => $board->id]);
+        broadcast(new BoardUpdated($board->fresh(), 'board.updated', ['board_id' => $board->id]))->toOthers();
 
         return back()->with('status', 'board-updated');
     }
@@ -48,22 +49,17 @@ class BoardController extends Controller
         return redirect()->route('boards.index')->with('status', 'board-deleted');
     }
 
-    public function storeGroupe (Request $request, Board $board)
+    public function storeGroupe (GroupStoreRequest $request, Board $board)
     {
-        abort_unless($request->user()?->can('update', $board), 403);
-
-        $data = $request->validate([
-            'name' => ['nullable', 'string', 'max:255'],
-            'color' => ['nullable', 'string', 'max:20'],
-        ]);
+        $data = $request->validated();
 
         $group = $board->groups()->create([
             'name' => trim($data['name'] ?? '') ?: 'Nouveau groupe',
-            'color' => $data['color'] ?: '#0091CD',
+            'color' => $data['color'] ?? '#0091CD',
             'order' => ((int) $board->groups()->max('order')) + 1,
         ]);
 
-        BoardUpdated::dispatch($board->fresh(), 'group.created', ['group_id' => $group->id]);
+        broadcast(new BoardUpdated($board->fresh(), 'group.created', ['group_id' => $group->id]))->toOthers();
 
         return redirect()->route('boards.show', ['board' => $board])->with('group_created_id', $group->id);
     }
@@ -122,7 +118,7 @@ class BoardController extends Controller
             $item->assignees()->sync($data['assignees']);
         }
 
-        BoardUpdated::dispatch($board->fresh(), 'item.created', ['item_id' => $item->id]);
+        broadcast(new BoardUpdated($board->fresh(), 'item.created', ['item_id' => $item->id]))->toOthers();
 
         return redirect()
             ->route($redirectRoute, $redirectParams)

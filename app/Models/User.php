@@ -124,6 +124,17 @@ class User extends Authenticatable
         return is_null($this->onboarding_completed_at);
     }
 
+    public function onboardingStorageKey(?Workspace $workspace = null): string
+    {
+        $workspaceId = $workspace?->getKey() ?? $this->current_workspace_id ?? 'none';
+
+        return sprintf(
+            'unipod-onboarding-completed:%s:%s',
+            $this->getKey() ?? 'guest',
+            $workspaceId
+        );
+    }
+
     public function markOnboardingStarted(?string $route = null): void
     {
         if (!Schema::hasColumn('users', 'onboarding_state')) {

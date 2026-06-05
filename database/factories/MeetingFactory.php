@@ -19,6 +19,7 @@ class MeetingFactory extends Factory
             'bilan' => [],
             'recommendations' => [],
             'actions' => [],
+            'workspace_id' => null,
             'user_id' => User::factory(),
         ];
     }

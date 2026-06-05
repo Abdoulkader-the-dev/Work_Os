@@ -3,13 +3,13 @@
 namespace App\Events;
 
 use App\Models\Meeting;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MeetingUpdated implements ShouldBroadcast
+class MeetingUpdated implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,8 +20,26 @@ class MeetingUpdated implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
+        if (!$this->meeting->workspace_id) {
+            return [];
+        }
+
         return [
-            new Channel('workspace.' . auth()->user()?->activeWorkspace?->id)
+            new PrivateChannel('workspaces.' . $this->meeting->workspace_id)
+        ];
+    }
+
+    public function broadcastAs(): string
+    {
+        return 'MeetingUpdated';
+    }
+
+    public function broadcastWith(): array
+    {
+        return [
+            'meeting_id' => $this->meeting->id,
+            'action' => $this->action,
+            'workspace_id' => $this->meeting->workspace_id,
         ];
     }
 }

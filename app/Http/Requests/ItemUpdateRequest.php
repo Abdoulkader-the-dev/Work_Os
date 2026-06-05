@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Item;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ItemUpdateRequest extends FormRequest
 {
@@ -10,43 +12,48 @@ class ItemUpdateRequest extends FormRequest
     {
         $item = $this->route('item');
 
-        if (!$item) {
-            return false;
-        }
-
-        $workspace = $item->group->board->workspace;
-        $user = $this->user();
-
-        // Check if user is owner
-        if ($workspace->user_id === $user->id) {
-            return true;
-        }
-
-        // Check user role in workspace
-        $member = $workspace->members()
-            ->where('user_id', $user->id)
-            ->first();
-
-        return $member && in_array($member->pivot->role, ['member', 'admin']);
+        return $item && ($this->user()?->can('update', $item) ?? false);
     }
 
     public function rules(): array
     {
+        $item = $this->route('item');
+        $board = $item?->group?->board;
+        $workspaceId = $board?->workspace_id;
+
         return [
             'name' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'in:todo,progress,ongoing,blocked,done'],
-            'priority' => ['nullable', 'in:basse,moyenne,haute,critique'],
+            'status' => ['nullable', Rule::in(Item::allowedStatuses())],
+            'priority' => ['nullable', Rule::in(Item::allowedPriorities())],
             'deadline' => ['nullable', 'date'],
             'description' => ['nullable', 'string'],
             'deliverable' => ['nullable', 'string'],
             'obstacles' => ['nullable', 'string'],
             'order' => ['nullable', 'integer', 'min:0'],
-            'group_id' => ['nullable', 'integer', 'exists:groups,id'],
+            'group_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('groups', 'id')->where(fn ($query) => $query->where('board_id', $board?->id)),
+            ],
             'assignees' => ['nullable', 'array'],
-            'assignees.*' => ['exists:users,id'],
+            'assignees.*' => [
+                Rule::exists('workspace_user', 'user_id')->where(fn ($query) => $query->where('workspace_id', $workspaceId)),
+            ],
             'redirect_view' => ['nullable', 'in:table,kanban,calendar'],
             'redirect_month' => ['nullable', 'integer', 'between:1,12'],
             'redirect_year' => ['nullable', 'integer', 'between:2000,2100'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $item = $this->route('item');
+            $status = $this->input('status');
+
+            if ($item && $status && !Item::canTransitionStatus($item->status, $status)) {
+                $validator->errors()->add('status', 'La transition de statut demandée est invalide.');
+            }
+        });
     }
 }

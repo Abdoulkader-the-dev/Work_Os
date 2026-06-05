@@ -10,12 +10,18 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+@vite(['resources/css/app.css', 'resources/js/app.js'])
+@livewireStyles
 </head>
 
+@php
+    $authUser = auth()->user();
+    $currentWorkspace = $authUser?->activeWorkspace;
+@endphp
+
 <body
-    data-onboarding-start="{{ session('onboarding') === 'start' || auth()->user()?->shouldShowOnboarding() ? '1' : '0' }}"
+    data-onboarding-start="{{ session('onboarding') === 'start' || $authUser?->shouldShowOnboarding() ? '1' : '0' }}"
+    data-onboarding-storage-key="{{ $authUser?->onboardingStorageKey($currentWorkspace) }}"
     x-data="{
         mobileSidebarOpen: false,
         toggleMobileSidebar() {
@@ -37,7 +43,7 @@
     <div id="sidebar-overlay" :class="{ 'open': mobileSidebarOpen }" @click="closeMobileSidebar()"></div>
 
     {{-- ══ ZONE PRINCIPALE ══ --}}
-    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;">
+    <div class="shell-main">
 
         <header id="topbar">
 
@@ -48,12 +54,11 @@
             </button>
 
             <h1 class="text-xl font-semibold" style="letter-spacing:-0.02em;white-space:nowrap;" data-tour-id="page-title">
-                @yield('page-title', 'Dashboard')
+                @yield('page-title', 'Tableau de bord')
             </h1>
 
             @php
-                $currentWorkspace = auth()->user()?->activeWorkspace;
-                $currentRole = auth()->user()?->workspaceRole($currentWorkspace);
+                $currentRole = $authUser?->workspaceRole($currentWorkspace);
                 $currentRoleLabel = match ($currentRole) {
                     'admin' => 'Admin',
                     'member' => 'Membre',
@@ -63,7 +68,7 @@
             @endphp
 
             @if($currentRoleLabel)
-                <span style="font-size:10px;font-family:'DM Mono',monospace;padding:4px 8px;border-radius:999px;background:var(--bg);color:var(--text-2);border:1px solid var(--border);margin-left:8px;">
+                <span class="role-pill" style="margin-left:8px;">
                     {{ $currentRoleLabel }}
                 </span>
             @endif
@@ -92,7 +97,7 @@
             </div>
 
             {{-- User menu --}}
-            <div style="position:relative;z-index:70;">
+            <div class="dropdown-shell">
                 <div class="user-avatar"
                      data-dropdown-trigger="profile-menu"
                      aria-controls="profile-menu"
@@ -104,16 +109,16 @@
                 <div id="profile-menu"
                      data-dropdown-menu
                      hidden
-                     style="position:absolute;right:0;top:calc(100% + 8px);width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);box-shadow:0 12px 32px rgba(0,0,0,0.1);padding:6px;z-index:60;">
+                     class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--wide dropdown-panel--right dropdown-panel--mobile-full"
+                     style="top:calc(100% + 8px);z-index:60;">
 
-                    <div style="padding:10px 12px 8px;border-bottom:1px solid var(--border);margin-bottom:4px;">
-                        <div class="text-sm font-semibold">{{ auth()->user()?->name }}</div>
-                        <div class="text-xs text-3 f-mono" style="margin-top:1px;">{{ auth()->user()?->email }}</div>
+                    <div class="surface-menu__header">
+                        <div class="text-sm font-semibold">{{ $authUser?->name }}</div>
+                        <div class="text-xs text-3 f-mono" style="margin-top:1px;">{{ $authUser?->email }}</div>
                     </div>
 
                     <a href="{{ route('settings') }}"
-                       class="flex-center" style="gap:8px;padding:7px 10px;border-radius:6px;font-size:13px;color:var(--text-2);text-decoration:none;transition:background .15s;"
-                       onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+                       class="surface-menu__item">
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.4"/>
                             <path d="M7 1v1M7 12v1M1 7h1M12 7h1M2.87 2.87l.7.7M10.43 10.43l.7.7M2.87 11.13l.7-.7M10.43 3.57l.7-.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
@@ -124,8 +129,7 @@
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit"
-                                class="flex-center" style="width:100%;gap:8px;padding:7px 10px;border-radius:6px;font-size:13px;color:#dc2626;background:none;border:none;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;"
-                                onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''">
+                                class="surface-menu__item surface-menu__item--danger">
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                                 <path d="M9 1H12a1 1 0 011 1v10a1 1 0 01-1 1H9M6 10l3-3-3-3M9 7H1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
@@ -223,7 +227,7 @@
     <script>
     (function () {
         const shouldStart = document.body.dataset.onboardingStart === '1';
-        const storageKey = 'unipod-onboarding-completed';
+        const storageKey = document.body.dataset.onboardingStorageKey || 'unipod-onboarding-completed';
         const overlay = document.getElementById('onboarding-overlay');
         const tooltip = document.getElementById('onboarding-tooltip');
         const titleEl = document.getElementById('onboarding-title');
@@ -243,22 +247,22 @@
                     { anchor: '[data-tour-id="global-search"]', title: 'Recherche', body: 'Ce champ sert à retrouver rapidement une information dans l’application.' },
                     { anchor: '[data-tour-id="notifications"]', title: 'Notifications', body: 'Ici arrivent les mentions, affectations et alertes importantes.' },
                     { anchor: '[data-tour-id="sidebar-dashboard"]', title: 'Navigation', body: 'Le menu latéral permet de passer entre les grandes pages du produit.' },
-                    { anchor: '[data-tour-id="workspace-switcher"]', title: 'Workspace', body: 'Vous pouvez changer d’espace de travail ou en créer un nouveau depuis ce sélecteur.' },
+                    { anchor: '[data-tour-id="workspace-switcher"]', title: 'Espace de travail', body: 'Vous pouvez changer d’espace de travail ou en créer un nouveau depuis ce sélecteur.' },
                     { anchor: '[data-tour-id="dashboard-timer"]', title: 'Chrono', body: 'Ce chrono permet de suivre le temps de travail directement depuis le dashboard.' },
                 ],
             },
             {
                 test: (p) => p.startsWith('/boards'),
                 steps: [
-                    { anchor: '[data-tour-id="view-switcher"]', title: 'Vues du board', body: 'Passez de Tableau à Kanban ou Calendrier selon votre besoin.' },
-                    { anchor: '[data-tour-id="topbar-action"]', title: 'Créer', body: 'Ce bouton permet d’ajouter une tâche rapidement dans le board courant.' },
-                    { anchor: '[data-tour-id="sidebar-boards"]', title: 'Boards', body: 'Ici vous retrouvez la liste des boards disponibles dans le workspace.' },
+                    { anchor: '[data-tour-id="view-switcher"]', title: 'Vues du tableau', body: 'Passez de Tableau à Kanban ou Calendrier selon votre besoin.' },
+                    { anchor: '[data-tour-id="topbar-action"]', title: 'Créer', body: 'Ce bouton permet d’ajouter une tâche rapidement dans le tableau courant.' },
+                    { anchor: '[data-tour-id="sidebar-boards"]', title: 'Tableaux', body: 'Ici vous retrouvez la liste des tableaux disponibles dans l\'espace de travail.' },
                 ],
             },
             {
                 test: (p) => p.startsWith('/meetings'),
                 steps: [
-                    { anchor: '[data-tour-id="topbar-action"]', title: 'Nouveau CR', body: 'Créez ou ouvrez un compte rendu de réunion depuis cette action.' },
+                    { anchor: '[data-tour-id="topbar-action"]', title: 'Nouveau compte rendu', body: 'Créez ou ouvrez un compte rendu de réunion depuis cette action.' },
                     { anchor: '[data-tour-id="meeting-toolbar"]', title: 'Filtrer et trier', body: 'La barre d’outils permet de rechercher et d’ordonner les réunions.' },
                 ],
             },

@@ -10,11 +10,7 @@ class CommentUpdateRequest extends FormRequest
     {
         $comment = $this->route('comment');
 
-        if (!$comment) {
-            return false;
-        }
-
-        return $comment->user_id === $this->user()->id;
+        return $comment && ($this->user()?->can('update', $comment) ?? false);
     }
 
     public function rules(): array

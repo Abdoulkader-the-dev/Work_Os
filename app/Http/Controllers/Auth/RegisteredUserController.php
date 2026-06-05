@@ -70,6 +70,8 @@ class RegisteredUserController extends Controller
             }
         }
 
+        $user->markOnboardingStarted('dashboard');
+
         event(new Registered($user));
 
         Auth::login($user);

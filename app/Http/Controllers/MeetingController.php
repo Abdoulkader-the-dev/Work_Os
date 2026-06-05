@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MeetingStoreRequest;
 use App\Http\Requests\MeetingUpdateRequest;
-use App\Models\Meeting;
 use App\Models\Board;
+use App\Models\Meeting;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Events\MeetingUpdated;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // Add this
@@ -19,7 +20,16 @@ class MeetingController extends Controller
         $user = auth()->user();
         $workspace = $user->activeWorkspace;
 
-        $meetings = Meeting::where('user_id', $user->id)
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
+        $meetings = Meeting::query()
+            ->where(function ($query) use ($workspace, $user) {
+                $query->where('workspace_id', $workspace->id)
+                    ->orWhere(function ($legacy) use ($user) {
+                        $legacy->whereNull('workspace_id')
+                            ->where('user_id', $user->id);
+                    });
+            })
             ->orderBy('date', 'desc')
             ->get();
 
@@ -29,10 +39,14 @@ class MeetingController extends Controller
     public function store(MeetingStoreRequest $request)
     {
         $data = $request->validated();
+        $workspace = $request->user()->activeWorkspace;
+
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
 
         $meeting = Meeting::create([
             'title' => $data['title'],
             'date' => $data['date'],
+            'workspace_id' => $workspace->id,
             'attendees' => $data['attendees'] ?? [],
             'bilan' => $data['bilan'] ?? [],
             'recommendations' => $data['recommendations'] ?? [],
@@ -63,10 +77,8 @@ class MeetingController extends Controller
         return response()->json(['meeting' => $meeting], 200);
     }
 
-public function destroy($id)
+    public function destroy(Meeting $meeting)
 {
-    $meeting = Meeting::findOrFail($id);
-
     $this->authorize('delete', $meeting);
 
     $meeting->delete();
@@ -92,7 +104,9 @@ public function destroy($id)
             return response()->json(['message' => 'Action already converted'], 400);
         }
 
-        $workspace = $request->user()->activeWorkspace;
+        $workspace = $meeting->workspace ?? $request->user()->activeWorkspace;
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
         $board = Board::where('workspace_id', $workspace->id)->first();
 
         if (!$board) {
@@ -112,6 +126,12 @@ public function destroy($id)
         ]);
 
         if (!empty($action['assignee_id'])) {
+            $assignee = User::find($action['assignee_id']);
+            abort_unless(
+                $assignee && $assignee->belongsToWorkspace($board->workspace),
+                422,
+                'L\'assigné doit appartenir au workspace.'
+            );
             $item->assignees()->attach($action['assignee_id']);
         }
 
@@ -223,11 +243,23 @@ public function destroy($id)
     {
         $this->authorize('update', $meeting);
 
+        $workspace = $meeting->workspace ?? $request->user()->activeWorkspace;
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
         $request->validate([
             'text' => 'required|string|max:255',
-            'assignee_id' => 'nullable|exists:users,id',
+            'assignee_id' => ['nullable', 'integer'],
             'deadline' => 'nullable|date',
         ]);
+
+        if ($request->filled('assignee_id')) {
+            $assignee = User::find($request->assignee_id);
+            abort_unless(
+                $assignee && $assignee->belongsToWorkspace($workspace),
+                422,
+                'L\'assigné doit appartenir au workspace.'
+            );
+        }
 
         $actions = $meeting->actions ?? [];
         $actions[] = [

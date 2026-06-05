@@ -39,9 +39,9 @@
 
 <div style="display:flex;flex-direction:column;gap:20px;">
     @if(!$workspace)
-        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
-            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
-            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour afficher le calendrier.</div>
+        <div class="empty-state bento-card">
+            <div class="empty-state__title">Aucun espace de travail actif</div>
+            <div class="empty-state__copy">Créez ou sélectionnez un espace de travail pour afficher le calendrier.</div>
         </div>
     @else
     <div class="calendar-toolbar">
@@ -64,7 +64,7 @@
             <div class="bento-card" style="padding:10px 14px;font-size:12px;color:{{ $overdueCount > 0 ? '#dc2626' : 'var(--text-2)' }};">
                 {{ $overdueCount }} en retard
             </div>
-            <a href="{{ route('calendar') }}" style="font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:white;cursor:pointer;color:var(--text-2);transition:all .15s;text-decoration:none;">
+            <a href="{{ route('calendar') }}" class="surface-menu__item" style="height:32px;padding:0 14px;">
                 Aujourd'hui
             </a>
         </div>

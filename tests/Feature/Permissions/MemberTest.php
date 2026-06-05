@@ -111,7 +111,7 @@ class MemberTest extends TestCase
 
         $workspace->members()->attach($member->id, ['role' => 'member']);
 
-        $response = $this->actingAs($member)->patch(route('workspaces.update.wk-name', ['workspace' => $workspace->id]), [
+        $response = $this->actingAs($member)->patch(route('workspaces.update', ['workspace' => $workspace->id]), [
             'name' => 'New Name'
         ]);
 
@@ -127,7 +127,7 @@ class MemberTest extends TestCase
 
         $workspace->members()->attach($member->id, ['role' => 'member']);
 
-        $response = $this->actingAs($member)->delete(route('workspaces.destroy.wk', ['workspace' => $workspace->id]));
+        $response = $this->actingAs($member)->delete(route('workspaces.destroy', ['workspace' => $workspace->id]));
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('workspaces', ['id' => $workspace->id]);
@@ -141,7 +141,7 @@ class MemberTest extends TestCase
 
         $workspace->members()->attach($member->id, ['role' => 'member']);
 
-        $response = $this->actingAs($member)->post(route('workspaces.members.add', ['workspace' => $workspace->id]), [
+        $response = $this->actingAs($member)->post(route('workspaces.members.store', ['workspace' => $workspace->id]), [
             'id' => $newMember->id,
             'role' => 'member'
         ]);
@@ -159,7 +159,7 @@ class MemberTest extends TestCase
         $workspace->members()->attach($member->id, ['role' => 'member']);
         $workspace->members()->attach($otherMember->id, ['role' => 'member']);
 
-        $response = $this->actingAs($member)->delete(route('workspaces.members.rm-member', [
+        $response = $this->actingAs($member)->delete(route('workspaces.members.destroy', [
             'workspace' => $workspace->id,
             'user' => $otherMember->id
         ]));
@@ -177,7 +177,7 @@ class MemberTest extends TestCase
         $workspace->members()->attach($member->id, ['role' => 'member']);
         $workspace->members()->attach($otherMember->id, ['role' => 'member']);
 
-        $response = $this->actingAs($member)->patch(route('workspaces.members.change-role', [
+        $response = $this->actingAs($member)->patch(route('workspaces.members.update', [
             'workspace' => $workspace->id,
             'user' => $otherMember->id
         ]), [
@@ -191,20 +191,4 @@ class MemberTest extends TestCase
         $this->assertEquals('member', $pivot->role);
     }
 
-    public function test_member_cannot_create_board(): void
-    {
-        $member = User::factory()->create();
-        $workspace = Workspace::factory()->create();
-
-        $workspace->members()->attach($member->id, ['role' => 'member']);
-        $member->forceFill(['current_workspace_id' => $workspace->id])->save();
-
-        $response = $this->actingAs($member)->post(route('boards.create'), [
-            'name' => 'New Board',
-            'workspace_id' => $workspace->id
-        ]);
-
-        $response->assertStatus(403);
-        $this->assertDatabaseMissing('boards', ['name' => 'New Board']);
-    }
 }

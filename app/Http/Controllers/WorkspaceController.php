@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Board;
 use App\Models\User;
 use App\Models\Workspace;
+use App\Http\Requests\WorkspaceMemberStoreRequest;
+use App\Http\Requests\WorkspaceMemberUpdateRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class WorkspaceController extends Controller
 {
@@ -42,33 +43,6 @@ class WorkspaceController extends Controller
         });
 
         return redirect()->route('dashboard')->with('status', 'workspace-created')->with('onboarding', 'start');
-    }
-
-    public function addMember(Request $request, int $workspace)
-    {
-        Log::info('Controller reached!', ['workspace' => $workspace]);
-
-        // Don't use $request->user()->workspaces() - just find directly
-        $workspace = Workspace::findOrFail($workspace);
-
-        $isAdmin = $workspace->members()
-            ->where('user_id', $request->user()->id)
-            ->where('role', 'admin')
-            ->exists();
-
-        if (!$isAdmin) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $request->validate([
-            'id' => 'required|exists:users,id',
-            'role' => 'required|in:member,admin',
-        ]);
-
-        // Use members() relationship, not users()
-        $workspace->members()->attach($request->id, ['role' => $request->role]);
-
-        return response()->json(['message' => 'Member added successfully'], 200);
     }
 
     public function update (Request $request, Workspace $workspace) {
@@ -107,7 +81,7 @@ class WorkspaceController extends Controller
     }
 
     public function switch (Request $request, Workspace $workspace) {
-        abort_unless($request->user()->workspaces()->whereKey($workspace->id)->exists(), 403);
+        abort_unless($request->user()->can('view', $workspace), 403);
 
         $request->user()->forceFill([
             'current_workspace_id' => $workspace->id,
@@ -116,80 +90,100 @@ class WorkspaceController extends Controller
         return redirect()->route('dashboard')->with('status', 'workspace-switched');
     }
 
-    public function removeMember(Request $request, int $workspace, int $user)
+    public function storeMember(WorkspaceMemberStoreRequest $request, Workspace $workspace)
     {
-        $workspace = Workspace::findOrFail($workspace);
-        $memberToRemove = User::findOrFail($user);
+        $data = $request->validated();
 
-        // Check if current user is an ADMIN of the workspace
-        $isAdmin = $workspace->members()
-            ->where('user_id', $request->user()->id)
-            ->where('role', 'admin')
-            ->exists();
+        $member = User::where('email', $data['email'])->first();
 
-        if (!$isAdmin) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!$member) {
+            return back()->withErrors([
+                'email' => 'Aucun utilisateur ne correspond à cette adresse e-mail.',
+            ], 'workspaceMembers');
         }
 
-        // Check if member exists in workspace
-        if (!$workspace->members()->where('user_id', $memberToRemove->id)->exists()) {
-            return response()->json(['error' => 'Member not found in workspace'], 404);
+        $workspace->members()->syncWithoutDetaching([
+            $member->id => ['role' => $data['role']],
+        ]);
+
+        if (!$member->current_workspace_id) {
+            $member->forceFill([
+                'current_workspace_id' => $workspace->id,
+            ])->save();
         }
 
-        // Prevent removing the workspace owner (if you want to keep this rule)
-        if ((int) $workspace->user_id === (int) $memberToRemove->id) {
-            return response()->json(['error' => 'Cannot remove the workspace owner'], 403);
+        return back()->with('status', 'workspace-member-added');
+    }
+
+    public function updateMember(WorkspaceMemberUpdateRequest $request, Workspace $workspace, User $user)
+    {
+        if ((int) $workspace->user_id === (int) $user->id) {
+            abort(403);
         }
 
-        // Remove the member
-        $workspace->members()->detach($memberToRemove->id);
+        abort_unless($workspace->members()->whereKey($user->id)->exists(), 404);
 
-        // If the removed member's current workspace was this one, switch them to another workspace
-        if ((int) $memberToRemove->current_workspace_id === (int) $workspace->id) {
-            $fallbackWorkspace = $memberToRemove->workspaces()->first();
-            $memberToRemove->forceFill([
+        $data = $request->validated();
+
+        $workspace->members()->updateExistingPivot($user->id, [
+            'role' => $data['role'],
+        ]);
+
+        return back()->with('status', 'workspace-member-updated');
+    }
+
+    public function destroyMember(Request $request, Workspace $workspace, User $user)
+    {
+        abort_unless($request->user()->can('manageMembers', $workspace), 403);
+
+        if ((int) $workspace->user_id === (int) $user->id) {
+            return back()->withErrors([
+                'workspace' => 'Le propriétaire ne peut pas être retiré du workspace.',
+            ], 'workspaceMembers');
+        }
+
+        abort_unless($workspace->members()->whereKey($user->id)->exists(), 404);
+
+        $workspace->members()->detach($user->id);
+
+        if ((int) $user->current_workspace_id === (int) $workspace->id) {
+            $fallbackWorkspace = $user->workspaces()->whereKeyNot($workspace->id)->first();
+            $user->forceFill([
                 'current_workspace_id' => $fallbackWorkspace?->id,
             ])->save();
         }
 
-        return response()->json(['message' => 'Member removed successfully'], 200);
+        return back()->with('status', 'workspace-member-removed');
     }
 
-    public function changeMemberRole(Request $request, int $workspace, int $user)
+    public function invite(Request $request, Workspace $workspace)
     {
-        $workspace = Workspace::findOrFail($workspace);
-        $member = User::findOrFail($user);
+        abort_unless($request->hasValidSignature(), 403);
 
-        // Check if current user is an ADMIN of the workspace
-        $isAdmin = $workspace->members()
-            ->where('user_id', $request->user()->id)
-            ->where('role', 'admin')
-            ->exists();
+        $role = $request->string('role')->toString() ?: 'member';
+        abort_unless(in_array($role, ['admin', 'member', 'reader'], true), 403);
 
-        if (!$isAdmin) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if ($request->user()) {
+            $workspace->members()->syncWithoutDetaching([
+                $request->user()->id => ['role' => $role],
+            ]);
+
+            if (!$request->user()->current_workspace_id) {
+                $request->user()->forceFill([
+                    'current_workspace_id' => $workspace->id,
+                ])->save();
+            }
+
+            return redirect()->route('members')->with('status', 'workspace-invite-accepted');
         }
 
-        // Prevent changing the role of the workspace owner
-        if ((int) $workspace->user_id === (int) $member->id) {
-            return response()->json(['error' => 'Cannot change the role of the workspace owner'], 403);
-        }
-
-        // Validate the new role
-        $request->validate([
-            'role' => 'required|in:member,admin'
+        session([
+            'pending_workspace_invite' => [
+                'workspace_id' => $workspace->id,
+                'role' => $role,
+            ],
         ]);
 
-        // Check if member exists in workspace
-        if (!$workspace->members()->where('user_id', $member->id)->exists()) {
-            return response()->json(['error' => 'Member not found in workspace'], 404);
-        }
-
-        // Update the role
-        $workspace->members()->updateExistingPivot($member->id, [
-            'role' => $request->role
-        ]);
-
-        return response()->json(['message' => 'Member role changed successfully'], 200);
-    } 
+        return redirect()->route('register')->with('status', 'workspace-invite-pending');
+    }
 }

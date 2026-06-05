@@ -24,6 +24,21 @@ class MeetingList extends Component
         $this->resetPage();
     }
 
+    protected function getListeners(): array
+    {
+        $workspaceId = auth()->user()?->activeWorkspace?->id;
+
+        $listeners = [
+            'workspace-changed' => 'refresh',
+        ];
+
+        if ($workspaceId) {
+            $listeners["echo-private:workspaces.{$workspaceId},MeetingUpdated"] = 'refresh';
+        }
+
+        return $listeners;
+    }
+
     public function updatingSearch(): void
     {
         $this->resetPage();
@@ -45,8 +60,17 @@ class MeetingList extends Component
     public function render()
     {
         $this->authorize('viewAny', Meeting::class);
+        $workspace = auth()->user()?->activeWorkspace;
+        abort_unless($workspace, 422, 'Aucun workspace actif.');
+
         $meetings = Meeting::query()
-            ->where('user_id', auth()->id())
+            ->where(function ($query) use ($workspace) {
+                $query->where('workspace_id', $workspace->id)
+                    ->orWhere(function ($legacy) {
+                        $legacy->whereNull('workspace_id')
+                            ->where('user_id', auth()->id());
+                    });
+            })
             ->where(function ($q) {
                 $q->where('title', 'like', "%{$this->search}%")
                   ->orWhere('attendees', 'like', "%{$this->search}%");

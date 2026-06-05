@@ -2,18 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Comment;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CommentStoreRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        $workspace = $this->user()?->activeWorkspace;
-
-        return $workspace && $workspace->members()
-            ->where('user_id', $this->user()->id)
-            ->whereIn('role', ['member', 'admin'])
-            ->exists();
+        return $this->user()?->can('create', Comment::class) ?? false;
     }
 
     public function rules(): array

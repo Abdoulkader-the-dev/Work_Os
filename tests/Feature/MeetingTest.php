@@ -80,15 +80,7 @@ class MeetingTest extends TestCase
 
         $meeting = Meeting::factory()->create(['user_id' => $user->id]);
 
-        // Debug: Check the meeting exists right before request
-        $checkMeeting = Meeting::find($meeting->id);
-        dump('Meeting exists before request: ' . ($checkMeeting ? 'yes' : 'no'));
-        dump('Meeting ID: ' . $meeting->id);
-
         $response = $this->actingAs($user)->delete("/meetings/{$meeting->id}");
-
-        dump('Response status: ' . $response->status());
-        dump('Response content: ' . $response->getContent());
 
         $response->assertStatus(200);
         $this->assertDatabaseMissing('meetings', ['id' => $meeting->id]);
@@ -226,6 +218,29 @@ class MeetingTest extends TestCase
         ]);
 
         $response->assertStatus(200);
+    }
+
+    public function test_meeting_creation_rejects_action_assignee_outside_workspace(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create(['user_id' => $user->id]);
+        $user->update(['current_workspace_id' => $workspace->id]);
+        $workspace->members()->attach($user->id, ['role' => 'member']);
+
+        $outsider = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson('/meetings', [
+            'title' => 'Team Meeting',
+            'date' => '2025-01-15',
+            'actions' => [[
+                'text' => 'Review external assignment',
+                'assignee_id' => $outsider->id,
+                'deadline' => '2025-01-20',
+            ]],
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['actions.0.assignee_id']);
     }
 
     public function test_user_can_remove_action(): void

@@ -41,13 +41,13 @@ Il regroupe:
 
 Chaque utilisateur peut avoir un espace courant. C’est l’espace qu’il voit en priorité lorsqu’il se connecte.
 
-Un workspace peut aussi être partagé avec d’autres personnes. Le propriétaire ou un admin peut:
+Un espace de travail peut aussi être partagé avec d’autres personnes. Le propriétaire ou un admin peut:
 - ajouter un membre par e-mail,
 - lui donner un rôle,
 - retirer un accès,
 - générer un lien d’invitation.
 
-Si la personne n’a pas encore de compte, elle peut ouvrir le lien d’invitation, créer son compte ou se connecter, puis rejoindre automatiquement le workspace.
+Si la personne n’a pas encore de compte, elle peut ouvrir le lien d’invitation, créer son compte ou se connecter, puis rejoindre automatiquement l'espace de travail.
 
 ### 2. Les tableaux
 
@@ -195,43 +195,43 @@ Elles définissent:
 
 ### Les rôles d’accès
 
-Le projet distingue maintenant 3 rôles dans un workspace.
+Le projet distingue maintenant 3 rôles dans un espace de travail.
 
 #### Admin
 
-L’admin est la personne qui gère le workspace.
+L’admin est la personne qui gère l'espace de travail.
 
 Il peut:
-- renommer le workspace,
-- supprimer le workspace,
+- renommer l'espace de travail,
+- supprimer l'espace de travail,
 - ajouter ou retirer des membres,
 - changer les rôles,
-- créer, modifier et supprimer les boards,
-- créer et modifier le contenu du workspace.
+- créer, modifier et supprimer les tableaux,
+- créer et modifier le contenu de l'espace de travail.
 
 #### Membre
 
 Le membre participe au travail quotidien.
 
 Il peut:
-- consulter le workspace,
-- travailler sur les boards et les tâches,
+- consulter l'espace de travail,
+- travailler sur les tableaux et les tâches,
 - utiliser les vues de suivi,
 - recevoir les notifications,
-- rejoindre un workspace partagé.
+- rejoindre un espace de travail partagé.
 
 Il ne peut pas:
 - gérer les membres,
-- renommer le workspace,
-- supprimer le workspace.
+- renommer l'espace de travail,
+- supprimer l'espace de travail.
 
 #### Lecture seule
 
 Le rôle `reader` sert à consulter sans modifier.
 
 Il peut:
-- voir le workspace,
-- lire les boards, tâches, réunions et notifications.
+- voir l'espace de travail,
+- lire les tableaux, tâches, réunions et notifications.
 
 Il ne peut pas:
 - créer,
@@ -281,7 +281,7 @@ Voici le parcours d’une action, expliqué simplement.
 5. L’interface affiche la nouvelle position.
 6. Si le temps réel est actif, les autres utilisateurs voient aussi la mise à jour.
 
-### Exemple: changer de workspace
+### Exemple: changer d'espace de travail
 
 1. L’utilisateur choisit un autre espace de travail.
 2. Laravel vérifie qu’il a accès à cet espace.
@@ -323,7 +323,7 @@ Contient tout ce qui est affiché à l’écran.
 Contient la structure et les données de départ.
 
 - `migrations/`: création et évolution des tables.
-- `seeders/`: données de démonstration.
+- `seeders/`: initialisation minimale pour un environnement propre.
 - `factories/`: génération de fausses données pour les tests.
 
 ### `public/`
@@ -338,14 +338,14 @@ Contient le point d’entrée public de l’application et les assets compilés.
 
 - Le frontend principal est terminé pour le périmètre actuel du projet.
 - Les vues principales des tableaux sont opérationnelles.
-- Les 3 vues de board sont branchées sur des vraies données:
+- Les 3 vues de tableau sont branchées sur des vraies données:
   - tableau,
   - Kanban,
   - calendrier.
 - L’ajout de tâche est unifié entre les différentes vues.
 - L’ajout de groupe fonctionne.
 - Le panneau latéral d’une tâche fonctionne.
-- Le dashboard affiche un état vide adapté aux nouveaux utilisateurs.
+- Le tableau de bord affiche un état vide adapté aux nouveaux utilisateurs.
 - Les pages principales existent et sont reliées:
   - calendrier,
   - rapports,
@@ -363,47 +363,55 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - les commentaires,
   - certains formulaires de création.
 - L’interface gère déjà:
-  - la création de boards,
-  - la modification de boards,
-  - la suppression de boards,
+  - la création de tableaux,
+  - la modification de tableaux,
+  - la suppression de tableaux,
   - l’affichage selon les permissions.
 - Les parcours principaux sont prêts à l’usage et l’interface est jugée complète dans sa version actuelle.
 - Les écrans secondaires suivent maintenant la même logique de rôle et de visibilité.
 
 ### Backend
 
-- Les workspaces peuvent être créés et changés.
-- Les workspaces peuvent être partagés par e-mail ou par lien d’invitation.
-- Le workspace courant est mémorisé en base.
-- Les boards peuvent être:
-  - créés,
-  - consultés,
-  - modifiés,
-  - supprimés.
-- Les groupes peuvent être créés, modifiés partiellement et supprimés.
-- Les tâches peuvent être:
-  - créées,
-  - modifiées,
-  - supprimées,
-  - déplacées,
-  - mises à jour en masse.
-- Les réunions peuvent être gérées via Livewire.
-- Des règles de validation existent déjà pour les boards.
-- Le temps réel est branché sur les vues board.
-- Les notifications de base sont déjà en place.
-- Des policies existent pour:
-  - board,
-  - workspace,
-  - meeting.
-- La logique des rôles de workspace est désormais explicite:
+- Les espaces de travail peuvent être créés, modifiés, supprimés et changés.
+- Le partage d'espace de travail fonctionne par e-mail et par lien d’invitation.
+- L'espace de travail courant est mémorisé en base et suit le contexte de navigation.
+- Les tableaux sont rattachés à l'espace de travail et passent par des contrôleurs dédiés.
+- Les groupes, les tâches et leurs validations métier sont gérés côté backend.
+- Les tâches supportent les déplacements, les mises à jour en masse et l’assignation.
+- Les réunions sont alignées sur le modèle d’équipe:
+  - rattachement à l'espace de travail,
+  - validation des actions liées,
+  - restrictions cohérentes côté backend et côté interface.
+- Les notifications disposent de leurs routes, de leurs actions de lecture et de tests dédiés.
+- La logique des rôles d'espace de travail est en place:
   - `admin`,
   - `member`,
   - `reader`.
-- Des `FormRequest` dédiés ont commencé à remplacer les validations en closure pour les membres de workspace.
-- Des tests d’autorisations ont commencé à couvrir les cas principaux:
-  - admin autorisé,
-  - member limité,
-  - reader en lecture seule.
+- Des policies existent déjà pour:
+  - board,
+  - workspace,
+  - meeting,
+  - item,
+  - group,
+  - comment,
+  - notification.
+- Des `FormRequest` dédiés existent déjà pour plusieurs flux critiques:
+  - boards,
+  - items,
+  - meetings,
+  - membres d'espace de travail,
+  - commentaires,
+  - notifications.
+- Les routes critiques ont été réalignées sur le code réel et les alias obsolètes ont été retirés.
+- Les tests d’autorisations, de validation, de suppression, de notification et de broadcasting couvrent déjà les flux principaux.
+- Les parcours d’invitation, d’inscription avec invite en attente et d’onboarding sont couverts par des tests de bout en bout.
+- Les notifications sont aussi vérifiées en contexte multi-utilisateur pour éviter les fuites entre comptes.
+- Le temps réel est branché sur des canaux privés cohérents avec Reverb/Echo, avec des événements backend en place.
+- Les écrans secondaires ont reçu un premier polish visuel commun:
+  - menus,
+  - dropdowns,
+  - états vides,
+  - messages d’interface les plus visibles.
 
 ### Base de données
 
@@ -420,57 +428,35 @@ Contient le point d’entrée public de l’application et les assets compilés.
   - `meetings`
   - `notifications`
 - Les relations essentielles sont déjà définies.
-- Des données de démonstration existent déjà dans les seeders.
+- Les seeders ne chargent plus de données de démonstration par défaut.
 - Les tâches ont déjà un champ de description.
 - Les réunions sont stockées avec des champs structurés en tableaux.
-- Le pivot `workspace_user` garde le rôle de chaque membre dans chaque workspace.
+- Le pivot `workspace_user` garde le rôle de chaque membre dans chaque espace de travail.
 - Les données de tutoriel utilisateur sont aussi persistées pour l’onboarding.
-- La base actuelle contient déjà les structures nécessaires pour le partage de workspace et l’onboarding.
+- La base actuelle contient déjà les structures nécessaires pour le partage d'espace de travail et l’onboarding.
 
 ---
 
 ## Ce qu’il reste à faire
 
-### Frontend
+Le projet est fonctionnel, mais il reste encore quelques points à stabiliser avant de le considérer comme totalement finalisé.
 
-- Harmoniser encore l’interface sur certains écrans.
-- Unifier les patterns visuels de certains dropdowns et notifications.
-- Finir le polish UI des éléments encore incohérents.
-- Renforcer les retours visuels sur certaines actions.
-- Vérifier que toutes les pages gardent une expérience homogène sur desktop et mobile.
-- Cacher encore plus finement les actions UI selon le rôle `reader` sur tous les écrans secondaires.
+### Priorité haute
 
-### Backend
+- Valider le temps réel dans un environnement proche de la production.
+- Garder la couverture de tests alignée avec les derniers cas limites métier.
+- Vérifier les parcours d’invitation, d’onboarding et de notifications dans un vrai usage multi-utilisateur.
+- Mettre à jour le README après chaque avancée significative.
 
-- Extraire davantage de logique hors des closures dans `routes/web.php`.
-- Créer des `Form Request` dédiées pour:
-  - groups,
-  - items,
-  - meetings.
-- Compléter la validation de certaines actions métier.
-- Ajouter davantage de policies:
-  - item,
-  - group,
-  - comment,
-  - notification.
-- Finaliser la logique du rôle `reader` dans tous les écrans, pas seulement les vues principales.
-- Compléter les tests d’autorisations sur:
-  - les permissions,
-  - les mises à jour,
-  - les suppressions,
-  - les notifications,
-  - le temps réel.
-- Activer réellement le broadcasting en environnement de production ou de test réaliste.
+### Priorité moyenne
 
-### Base de données
+- Réduire les petites incohérences restantes dans la documentation et les messages d’interface.
 
-- Ajouter éventuellement des contraintes métier plus strictes.
-- Vérifier les index si la base grossit.
-- Renforcer la cohérence de certaines structures de données.
-- Prévoir la montée en charge:
-  - files de traitement,
-  - workers,
-  - persistance des événements si nécessaire.
+### Priorité basse
+
+- Surveiller les performances si la base de données grossit.
+- Ajouter au besoin des contraintes métier ou des index supplémentaires.
+- Préparer une éventuelle persistance plus robuste des traitements asynchrones si le volume augmente.
 
 ---
 
@@ -595,27 +581,26 @@ Il possède une base fonctionnelle solide sur les 3 couches:
 - backend,
 - base de données.
 
-Le produit est exploitable, mais il reste encore du travail pour:
-- rendre tout le code plus propre et plus homogène,
-- compléter les validations,
-- compléter les permissions,
-- finir la couverture de tests,
-- finaliser certaines parties de l’interface,
-- rendre le temps réel pleinement opérationnel.
+Le produit est exploitable, avec un backend consolidé, une base sans données démo par défaut, et une base de tests déjà verte.
+Le reste du travail porte surtout sur:
+- la validation du temps réel en conditions réalistes,
+- la couverture des cas limites métier,
+- le polish des écrans secondaires,
+- la cohérence finale de la documentation et de l’interface.
 
-La logique métier la plus importante est déjà en place:
-- les workspaces peuvent être créés, partagés, renommés et supprimés,
+La logique métier principale est déjà en place:
+- les espaces de travail peuvent être créés, partagés, renommés et supprimés,
 - les rôles `admin`, `member` et `reader` existent,
 - le parcours d’invitation fonctionne aussi pour les nouveaux utilisateurs,
 - les vues principales sont connectées aux données réelles,
-- le tutoriel d’onboarding est en place.
+- le tutoriel d’onboarding est en place et se relance pour un nouveau compte ou un nouvel espace de travail.
+
+Le navigateur ne dépend plus d’un état global de tutoriel: le contexte utilisateur/espace de travail déclenche le bon affichage au bon moment.
 
 ---
 
 ## Ordre de suite recommandé
 
-1. Terminer les tests d’autorisations.
-2. Créer les Form Requests manquantes.
-3. Sortir la logique métier des routes vers des contrôleurs ou services.
-4. Activer et tester le vrai temps réel.
-5. Finir le polish de l’interface.
+1. Fiabiliser le temps réel en conditions réelles.
+2. Finaliser la couverture de tests sur les cas limites métier.
+3. Nettoyer les derniers écarts de documentation et de texte UI.

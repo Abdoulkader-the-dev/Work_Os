@@ -3,19 +3,31 @@
 namespace App\Livewire\Partials;
 
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class Sidebar extends Component
 {
     public int $myTasksCount = 0;
 
-    #[On('echo:board-updated,BoardUpdated')]
-    #[On('action-converted')]
-    #[On('notifications-updated')]
-    #[On('workspace-changed')]
     public function refresh()
     {
         $this->updateCounts();
+    }
+
+    protected function getListeners(): array
+    {
+        $workspaceId = auth()->user()?->activeWorkspace?->id;
+
+        $listeners = [
+            'action-converted' => 'refresh',
+            'notifications-updated' => 'refresh',
+            'workspace-changed' => 'refresh',
+        ];
+
+        if ($workspaceId) {
+            $listeners["echo-private:workspaces.{$workspaceId},BoardUpdated"] = 'refresh';
+        }
+
+        return $listeners;
     }
 
     public function mount()

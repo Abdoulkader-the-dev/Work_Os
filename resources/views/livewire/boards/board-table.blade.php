@@ -109,7 +109,7 @@
                 </div>
 
                 {{-- Group actions dropdown --}}
-                <div class="relative" data-group-menu>
+                <div class="dropdown-shell" data-group-menu>
                     <button type="button"
                             class="icon-btn"
                             style="width:26px;height:26px;border:none;background:none;"
@@ -120,16 +120,17 @@
 
                     <div data-group-menu-panel
                          hidden
-                         class="absolute z-50 mt-1 rounded-md shadow-lg"
-                         style="right:0;top:calc(100% + 4px);background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
-                        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
-                             onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+                         class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--right"
+                         style="right:0;top:calc(100% + 4px);z-index:50;min-width:160px;">
+                        <div class="surface-menu__item"
                              wire:click="startEditingGroup({{ $group->id }})" @click="open=false">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 9.5l1.5 1.5L11 2.5 9.5 1 1 9.5zM1 9.5v1.5h1.5" stroke="currentColor" stroke-width="1.2"/></svg>
                             Renommer
                         </div>
 
-                        <div style="padding:6px 10px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;">Couleur</div>
+                        <div class="surface-menu__header" style="padding:8px 10px 6px;border-bottom:none;">
+                            <div class="surface-menu__title">Couleur</div>
+                        </div>
                         <div style="display:flex;gap:6px;padding:4px 10px 8px;flex-wrap:wrap;">
                             @foreach(['#0091CD', '#22c55e', '#ef4444', '#f97316', '#8b5cf6', '#111110'] as $color)
                                 <div wire:click="updateGroupColor({{ $group->id }}, '{{ $color }}')"
@@ -138,9 +139,8 @@
                             @endforeach
                         </div>
 
-                        <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px;"></div>
-                        <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;color:#dc2626;transition:background .12s;"
-                             onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''"
+                        <div class="surface-menu__divider"></div>
+                        <div class="surface-menu__item surface-menu__item--danger"
                              wire:click="deleteGroup({{ $group->id }})" wire:confirm="Supprimer ce groupe et toutes ses tâches ?" @click="open=false">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V1.5h2V3M4 3v7h4V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                             Supprimer
@@ -230,11 +230,11 @@
                                             </button>
 
                                             {{-- Dropdown statut --}}
-                                            <div x-show="open"
-                                                 style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:170px;">
+                                        <div x-show="open"
+                                                 class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--left"
+                                                 style="display:none;top:calc(100% + 4px);left:0;z-index:50;min-width:170px;">
                                                 @foreach(['done' => 'Achevé', 'progress' => 'En cours', 'todo' => 'Non commencé', 'blocked' => 'Bloqué', 'ongoing' => 'Continu'] as $val => $label)
-                                                    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
-                                                         onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+                                                    <div class="surface-menu__item"
                                                          wire:click="updateStatus({{ $item->id }}, '{{ $val }}')"
                                                          @click="open = false">
                                                         <span class="s-{{ $val }}" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
@@ -280,11 +280,11 @@
                                             </button>
 
                                             {{-- Dropdown priorité --}}
-                                            <div x-show="open"
-                                                 style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:140px;">
+                                        <div x-show="open"
+                                                 class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--left"
+                                                 style="display:none;top:calc(100% + 4px);left:0;z-index:50;min-width:140px;">
                                                 @foreach(['critique'=>['#8b5cf6','Critique'],'haute'=>['#ef4444','Haute'],'moyenne'=>['#FFD100','Moyenne'],'basse'=>['#22c55e','Basse']] as $val=>[$color,$label])
-                                                    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
-                                                         onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+                                                    <div class="surface-menu__item"
                                                          wire:click="updatePriority({{ $item->id }}, '{{ $val }}')"
                                                          @click="open=false">
                                                         <span style="width:7px;height:7px;border-radius:50%;background:{{ $color }};flex-shrink:0;"></span>
@@ -333,15 +333,14 @@
 
                                             {{-- Dropdown actions --}}
                                             <div x-show="open"
-                                                 style="display:none;position:absolute;right:0;top:calc(100% + 4px);z-index:50;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:4px;min-width:160px;">
-                                                <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;transition:background .12s;"
-                                                     onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''"
+                                                 class="surface-menu surface-menu--compact dropdown-panel dropdown-panel--right"
+                                                 style="display:none;top:calc(100% + 4px);right:0;z-index:50;min-width:160px;">
+                                                <div class="surface-menu__item"
                                                      wire:click="openItemPanel({{ $item->id }})" @click="open=false">
                                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="6" r="1.5" stroke="currentColor" stroke-width="1.2"/></svg>
                                                     Ouvrir
                                                 </div>
-                                                <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;cursor:pointer;color:#dc2626;transition:background .12s;"
-                                                     onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background=''"
+                                                <div class="surface-menu__item surface-menu__item--danger"
                                                      wire:click="deleteItem({{ $item->id }})" wire:confirm="Supprimer cette tâche ?" @click="open=false">
                                                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 3h8M5 3V1.5h2V3M4 3v7h4V3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
                                                     Supprimer

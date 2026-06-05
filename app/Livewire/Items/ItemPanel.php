@@ -55,7 +55,7 @@ class ItemPanel extends Component
         $this->item->update([$field => $value ?: null]);
         $this->item->refresh()->loadMissing(['assignees', 'comments.user', 'group.board']);
         $this->dispatch('item-updated');
-        BoardUpdated::dispatch($this->item->group->board->fresh(), 'item.updated', ['item_id' => $this->item->id, 'field' => $field]);
+        broadcast(new BoardUpdated($this->item->group->board->fresh(), 'item.updated', ['item_id' => $this->item->id, 'field' => $field]))->toOthers();
     }
 
     public function addComment(): void
@@ -92,13 +92,16 @@ class ItemPanel extends Component
         $this->newComment = '';
         $this->item->load('comments.user');
         $this->dispatch('trix-clear-comment');
-        BoardUpdated::dispatch($this->item->group->board->fresh(), 'comment.created', ['item_id' => $this->item->id]);
+        broadcast(new BoardUpdated($this->item->group->board->fresh(), 'comment.created', ['item_id' => $this->item->id]))->toOthers();
     }
 
     public function addAssignee(int $userId): void
     {
         if (!$this->item) return;
         $this->authorize('update', $this->item->group->board);
+        $workspace = $this->item->group->board->workspace;
+        $assignee = User::find($userId);
+        abort_unless($assignee && $assignee->belongsToWorkspace($workspace), 422, 'L\'assigné doit appartenir au workspace.');
         $this->item->assignees()->syncWithoutDetaching([$userId]);
         $this->item->load('assignees');
         $this->dispatch('item-updated');
@@ -115,7 +118,7 @@ class ItemPanel extends Component
             NotificationSent::dispatch($notification);
         }
 
-        BoardUpdated::dispatch($this->item->group->board->fresh(), 'assignee.added', ['item_id' => $this->item->id, 'user_id' => $userId]);
+        broadcast(new BoardUpdated($this->item->group->board->fresh(), 'assignee.added', ['item_id' => $this->item->id, 'user_id' => $userId]))->toOthers();
     }
 
     public function removeAssignee(int $userId): void
@@ -125,13 +128,16 @@ class ItemPanel extends Component
         $this->item->assignees()->detach($userId);
         $this->item->load('assignees');
         $this->dispatch('item-updated');
-        BoardUpdated::dispatch($this->item->group->board->fresh(), 'assignee.removed', ['item_id' => $this->item->id, 'user_id' => $userId]);
+        broadcast(new BoardUpdated($this->item->group->board->fresh(), 'assignee.removed', ['item_id' => $this->item->id, 'user_id' => $userId]))->toOthers();
     }
 
     public function getAvailableUsersProperty()
     {
         if (!$this->item) return collect();
-        return User::where('name', 'like', "%{$this->searchAssignee}%")
+        $workspace = $this->item->group->board->workspace;
+
+        return User::whereHas('workspaces', fn ($query) => $query->whereKey($workspace->id))
+            ->where('name', 'like', "%{$this->searchAssignee}%")
             ->whereNotIn('id', $this->item->assignees->pluck('id'))
             ->limit(8)
             ->get();

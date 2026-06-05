@@ -96,7 +96,7 @@ class BoardTable extends Component
         }
 
         $this->resetGroupCreationForm();
-        BoardUpdated::dispatch($this->board->fresh(), 'group.created', ['group_id' => $group->id]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'group.created', ['group_id' => $group->id]))->toOthers();
     }
 
     public function deleteGroup(int $groupId): void
@@ -109,7 +109,7 @@ class BoardTable extends Component
             $this->openGroups, fn($id) => $id !== $groupId
         ));
 
-        BoardUpdated::dispatch($this->board->fresh(), 'group.deleted', ['group_id' => $groupId]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'group.deleted', ['group_id' => $groupId]))->toOthers();
     }
 
     public function startEditingGroup(int $groupId): void
@@ -129,7 +129,7 @@ class BoardTable extends Component
         $group = $this->board->groups()->findOrFail($groupId);
         $group->update(['name' => trim($validated['name'])]);
         $this->editingGroup = [];
-        BoardUpdated::dispatch($this->board->fresh(), 'group.updated', ['group_id' => $groupId]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'group.updated', ['group_id' => $groupId]))->toOthers();
     }
 
     public function updateGroupColor(int $groupId, string $color): void
@@ -141,7 +141,7 @@ class BoardTable extends Component
 
         $group = $this->board->groups()->findOrFail($groupId);
         $group->update(['color' => $validated['color']]);
-        BoardUpdated::dispatch($this->board->fresh(), 'group.updated', ['group_id' => $groupId]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'group.updated', ['group_id' => $groupId]))->toOthers();
     }
 
     // ── Items ─────────────────────────────────────────────────
@@ -164,7 +164,7 @@ class BoardTable extends Component
 
         $this->newItemName = '';
         $this->dispatch('item-added', itemId: $item->id);
-        BoardUpdated::dispatch($this->board->fresh(), 'item.created', ['item_id' => $item->id]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.created', ['item_id' => $item->id]))->toOthers();
     }
 
     public function deleteItem(int $itemId): void
@@ -172,7 +172,7 @@ class BoardTable extends Component
         $this->authorize('update', $this->board);
         $item = $this->board->items()->findOrFail($itemId);
         $item->delete();
-        BoardUpdated::dispatch($this->board->fresh(), 'item.deleted', ['item_id' => $itemId]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.deleted', ['item_id' => $itemId]))->toOthers();
     }
 
     // ── Édition inline ────────────────────────────────────────
@@ -203,7 +203,7 @@ class BoardTable extends Component
         $item->update([$field => $value]);
         $this->editingCell = [];
         $this->dispatch('item-updated');
-        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => $field]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => $field]))->toOthers();
     }
 
     public function updateStatus(int $itemId, string $status): void
@@ -212,9 +212,10 @@ class BoardTable extends Component
         $allowed = ['done', 'progress', 'todo', 'blocked', 'ongoing'];
         if (!in_array($status, $allowed)) return;
         $item = $this->board->items()->findOrFail($itemId);
+        if (!Item::canTransitionStatus($item->status, $status)) return;
         $item->update(['status' => $status]);
         $this->dispatch('item-updated');
-        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'status']);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'status']))->toOthers();
     }
 
     public function updatePriority(int $itemId, string $priority): void
@@ -224,7 +225,7 @@ class BoardTable extends Component
         if (!in_array($priority, $allowed)) return;
         $item = $this->board->items()->findOrFail($itemId);
         $item->update(['priority' => $priority]);
-        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'priority']);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'priority']))->toOthers();
     }
 
     public function updateDeadline(int $itemId, string $date): void
@@ -236,7 +237,7 @@ class BoardTable extends Component
 
         $item = $this->board->items()->findOrFail($itemId);
         $item->update(['deadline' => $date ?: null]);
-        BoardUpdated::dispatch($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'deadline']);
+        broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'deadline']))->toOthers();
     }
 
     // ── Bulk actions ──────────────────────────────────────────
@@ -267,12 +268,22 @@ class BoardTable extends Component
             'value' => ['required', 'string'],
         ])->validate();
 
+        if ($type === 'status') {
+            $items = $this->board->items()->whereIn('id', $this->bulkSelected)->get();
+
+            foreach ($items as $item) {
+                if (!Item::canTransitionStatus($item->status, $value)) {
+                    return;
+                }
+            }
+        }
+
         $this->board->items()->whereIn('id', $this->bulkSelected)->update([$type => $value]);
         $this->bulkSelected = [];
         $this->bulkMode     = false;
         $this->bulkAction   = '';
         $this->dispatch('item-updated');
-        BoardUpdated::dispatch($this->board->fresh(), 'items.bulk-updated', ['field' => $type]);
+        broadcast(new BoardUpdated($this->board->fresh(), 'items.bulk-updated', ['field' => $type]))->toOthers();
     }
 
     public function openItemPanel(int $itemId): void

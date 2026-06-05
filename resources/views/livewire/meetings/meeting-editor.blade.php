@@ -10,7 +10,7 @@
             </svg>
         </span>
         <span wire:loading wire:target="saveMeeting">⏳</span>
-        Sauvegarder le CR
+        Enregistrer le compte rendu
     </button>
 @endsection
 
@@ -285,7 +285,7 @@
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </span>
                 <span wire:loading wire:target="saveMeeting">⏳</span>
-                Sauvegarder le CR
+                Enregistrer le compte rendu
             </button>
         </div>
     </div>

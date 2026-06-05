@@ -10,7 +10,7 @@ class Meeting extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title', 'date', 'attendees',
+        'title', 'date', 'workspace_id', 'attendees',
         'bilan', 'recommendations', 'actions', 'user_id'
     ];
 
@@ -23,4 +23,5 @@ class Meeting extends Model
     ];
 
     public function user() { return $this->belongsTo(User::class); }
+    public function workspace() { return $this->belongsTo(Workspace::class); }
 }

@@ -1,4 +1,4 @@
 <x-app-layout>
-    @section('page-title', 'Dashboard')
+    @section('page-title', 'Tableau de bord')
     <livewire:dashboard />
 </x-app-layout>

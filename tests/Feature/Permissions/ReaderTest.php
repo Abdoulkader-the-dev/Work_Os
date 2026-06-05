@@ -133,7 +133,7 @@ class ReaderTest extends TestCase
 
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
 
-        $response = $this->actingAs($reader)->patch(route('workspaces.update.wk-name', ['workspace' => $workspace->id]), [
+        $response = $this->actingAs($reader)->patch(route('workspaces.update', ['workspace' => $workspace->id]), [
             'name' => 'New Name'
         ]);
 
@@ -149,7 +149,7 @@ class ReaderTest extends TestCase
 
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
 
-        $response = $this->actingAs($reader)->delete(route('workspaces.destroy.wk', ['workspace' => $workspace->id]));
+        $response = $this->actingAs($reader)->delete(route('workspaces.destroy', ['workspace' => $workspace->id]));
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('workspaces', ['id' => $workspace->id]);
@@ -164,7 +164,7 @@ class ReaderTest extends TestCase
 
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
 
-        $response = $this->actingAs($reader)->post(route('workspaces.members.add', ['workspace' => $workspace->id]), [
+        $response = $this->actingAs($reader)->post(route('workspaces.members.store', ['workspace' => $workspace->id]), [
             'id' => $newMember->id,
             'role' => 'member'
         ]);
@@ -182,7 +182,7 @@ class ReaderTest extends TestCase
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
         $workspace->members()->attach($otherMember->id, ['role' => 'member']);
 
-        $response = $this->actingAs($reader)->delete(route('workspaces.members.rm-member', [
+        $response = $this->actingAs($reader)->delete(route('workspaces.members.destroy', [
             'workspace' => $workspace->id,
             'user' => $otherMember->id
         ]));
@@ -200,7 +200,7 @@ class ReaderTest extends TestCase
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
         $workspace->members()->attach($otherMember->id, ['role' => 'member']);
 
-        $response = $this->actingAs($reader)->patch(route('workspaces.members.change-role', [
+        $response = $this->actingAs($reader)->patch(route('workspaces.members.update', [
             'workspace' => $workspace->id,
             'user' => $otherMember->id
         ]), [
@@ -222,7 +222,7 @@ class ReaderTest extends TestCase
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
         $reader->forceFill(['current_workspace_id' => $workspace->id])->save();
 
-        $response = $this->actingAs($reader)->post(route('boards.create'), [
+        $response = $this->actingAs($reader)->post(route('boards.store'), [
             'name' => 'New Board',
             'workspace_id' => $workspace->id
         ]);
@@ -256,7 +256,7 @@ class ReaderTest extends TestCase
 
         $workspace->members()->attach($reader->id, ['role' => 'reader']);
 
-        $response = $this->actingAs($reader)->delete(route('boards.delete', ['board' => $board->id]));
+        $response = $this->actingAs($reader)->delete(route('boards.destroy', ['board' => $board->id]));
 
         $response->assertStatus(403);
         $this->assertDatabaseHas('boards', ['id' => $board->id]);

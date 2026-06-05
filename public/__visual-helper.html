@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visual Helper</title>
+</head>
+<body>
+<script>
+(async () => {
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get('target') || '/dashboard';
+    const email = params.get('email') || 'visual@example.com';
+    const password = params.get('password') || 'password';
+
+    const loginPage = await fetch('/login', { credentials: 'same-origin' });
+    const html = await loginPage.text();
+    const tokenMatch = html.match(/name="_token" value="([^"]+)"/);
+
+    if (!tokenMatch) {
+        document.body.textContent = 'CSRF token missing.';
+        return;
+    }
+
+    const payload = new URLSearchParams({
+        _token: tokenMatch[1],
+        email,
+        password,
+        remember: '1',
+    });
+
+    await fetch('/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        },
+        body: payload.toString(),
+        redirect: 'follow',
+    });
+
+    window.location.href = target;
+})();
+</script>
+</body>
+</html>

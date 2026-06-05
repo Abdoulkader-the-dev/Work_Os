@@ -3,13 +3,25 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Livewire\Attributes\On;
 
 class MyTasks extends Component
 {
-    #[On('echo:board-updated,BoardUpdated')]
-    #[On('workspace-changed')]
     public function refresh() {}
+
+    protected function getListeners(): array
+    {
+        $workspaceId = auth()->user()?->activeWorkspace?->id;
+
+        $listeners = [
+            'workspace-changed' => 'refresh',
+        ];
+
+        if ($workspaceId) {
+            $listeners["echo-private:workspaces.{$workspaceId},BoardUpdated"] = 'refresh';
+        }
+
+        return $listeners;
+    }
 
     public function render()
     {

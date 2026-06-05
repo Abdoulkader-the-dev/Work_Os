@@ -26,35 +26,35 @@
     $overdueTasks = (clone $itemQuery)->whereNotNull('deadline')->whereDate('deadline', '<', now()->toDateString())->where('status', '!=', 'done')->count();
 @endphp
 
-<div style="display:flex;flex-direction:column;gap:20px;">
+<div class="page-stack">
     @if(!$workspace)
-        <div style="text-align:center;padding:72px 24px;color:var(--text-3);border:1px dashed var(--border-md);border-radius:14px;background:white;">
-            <div style="font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px;">Aucun workspace actif</div>
-            <div style="font-size:13px;">Créez ou sélectionnez un workspace pour consulter les rapports.</div>
+        <div class="empty-state bento-card empty-state--compact">
+            <div class="empty-state__title">Aucun espace de travail actif</div>
+            <div class="empty-state__copy">Créez ou sélectionnez un espace de travail pour consulter les rapports.</div>
         </div>
     @else
     <div class="reports-grid" data-tour-id="reports-summary">
-        <div class="bento-card" style="padding:20px;">
+        <div class="bento-card page-card">
             <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:16px;">Tâches totales</div>
             <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;">{{ $totalTasks }}</div>
         </div>
-        <div class="bento-card" style="padding:20px;">
+        <div class="bento-card page-card">
             <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:16px;">Taux d'achèvement</div>
             <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;">{{ $completionRate }}%</div>
         </div>
-        <div class="bento-card" style="padding:20px;">
+        <div class="bento-card page-card">
             <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:16px;">Priorité critique</div>
             <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;">{{ $criticalTasks }}</div>
         </div>
-        <div class="bento-card" style="padding:20px;">
+        <div class="bento-card page-card">
             <div style="font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:16px;">En retard</div>
             <div style="font-size:32px;font-weight:600;letter-spacing:-0.04em;color:{{ $overdueTasks > 0 ? '#dc2626' : 'var(--text-1)' }};">{{ $overdueTasks }}</div>
         </div>
     </div>
 
     <div class="reports-panels">
-        <div class="bento-card" style="padding:20px;">
-            <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em;margin-bottom:16px;">Répartition par statut</div>
+        <div class="bento-card page-card">
+            <div class="section-title">Répartition par statut</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 @foreach($statusRows as $row)
                     @php
@@ -73,17 +73,16 @@
             </div>
         </div>
 
-        <div class="bento-card" style="padding:20px;">
-            <div style="font-size:14px;font-weight:600;letter-spacing:-0.01em;margin-bottom:16px;">Performance des boards</div>
+        <div class="bento-card page-card">
+            <div class="section-title">Performance des tableaux</div>
             <div style="display:flex;flex-direction:column;gap:10px;">
                 @forelse($boards as $board)
                     <a href="{{ route('boards.show', $board) }}"
-                       style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:12px;text-decoration:none;color:inherit;transition:background .15s;"
-                       onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='white'">
+                       class="report-link">
                         <div style="width:10px;height:10px;border-radius:50%;background:{{ $board->color ?? '#0091CD' }};flex-shrink:0;"></div>
                         <div style="flex:1;min-width:0;">
                             <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ $board->name }}</div>
-                            <div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:3px;">
+                            <div class="report-link__meta">
                                 {{ $board->items_count }} tâches
                             </div>
                         </div>
@@ -93,7 +92,9 @@
                         <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-3);width:40px;text-align:right;flex-shrink:0;">{{ $board->progress }}%</span>
                     </a>
                 @empty
-                    <div style="text-align:center;padding:32px;color:var(--text-3);font-size:13px;">Aucun board à analyser.</div>
+                    <div class="empty-state empty-state--compact" style="padding:32px;">
+                        <div class="empty-state__copy">Aucun tableau à analyser.</div>
+                    </div>
                 @endforelse
             </div>
         </div>
