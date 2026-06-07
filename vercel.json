@@ -1,10 +1,12 @@
 {
     "version": 2,
-    "buildCommand": "composer install --no-dev --optimize-autoloader && npm install && npm run build && php artisan config:cache && php artisan route:cache && php artisan view:cache",
     "builds": [
         {
             "src": "api/index.php",
-            "use": "vercel-php@0.9.0"
+            "use": "vercel-php@0.9.0",
+            "config": {
+                "buildCommand": "npm install && npm run build && php artisan config:cache && php artisan route:cache && php artisan view:cache"
+            }
         },
         {
             "src": "public/**",
