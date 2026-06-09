@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'default' => env('VERCEL') ? 'log' : env('BROADCAST_CONNECTION', 'reverb'),
+    'default' => env('BROADCAST_CONNECTION', 'log'),
 
     'connections' => [
         'reverb' => [
