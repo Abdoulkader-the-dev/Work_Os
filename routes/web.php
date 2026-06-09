@@ -63,8 +63,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Réunions
     Route::get('/meetings', [MeetingController::class, 'index'])->name('meetings.index');
+    Route::get('/meetings/create', [MeetingController::class, 'create'])->name('meetings.create');
     Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.store');
     Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
+    Route::get('/meetings/{meeting}/edit', [MeetingController::class, 'edit'])->name('meetings.edit');
     Route::patch('/meetings/{meeting}', [MeetingController::class, 'update'])->name('meetings.update');
     Route::delete('/meetings/{meeting}', [MeetingController::class, 'destroy'])->name('meetings.destroy');
     Route::post('/meetings/{meeting}/actions/{actionIndex}/convert', [MeetingController::class, 'convertActionToTask'])->name('meetings.actions.convert');

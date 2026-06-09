@@ -1,23 +1,11 @@
 {{-- resources/views/livewire/meetings/meeting-list.blade.php --}}
 
-@section('page-title', 'Réunions')
-
 @php
     $canCreateMeeting = auth()->user()?->can('create', \App\Models\Meeting::class) ?? false;
 @endphp
 
-@section('topbar-action')
-    @if($canCreateMeeting)
-        <a href="{{ route('meetings.create') }}" class="btn-primary" wire:navigate data-tour-id="meeting-create">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            Nouveau compte rendu
-        </a>
-    @endif
-@endsection
-
 <div class="page-stack">
+
     <div wire:loading.flex style="align-items:center;gap:8px;color:var(--text-3);font-size:13px;">
         <svg class="animate-spin" width="14" height="14" viewBox="0 0 14 14" fill="none">
             <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="16" stroke-linecap="round" opacity=".35"/>

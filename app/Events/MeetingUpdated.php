@@ -3,15 +3,10 @@
 namespace App\Events;
 
 use App\Models\Meeting;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Broadcasting\Channel;
 
-class MeetingUpdated implements ShouldBroadcastNow
+class MeetingUpdated extends BroadcastEvent
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public Meeting $meeting,
@@ -25,7 +20,7 @@ class MeetingUpdated implements ShouldBroadcastNow
         }
 
         return [
-            new PrivateChannel('workspaces.' . $this->meeting->workspace_id)
+            new Channel('workspaces.' . $this->meeting->workspace_id)
         ];
     }
 

@@ -54,7 +54,7 @@ class BoardCalendar extends Component
     protected function getListeners(): array
     {
         return [
-            "echo-private:boards.{$this->board->id},BoardUpdated" => '$refresh',
+            "echo:boards.{$this->board->id},BoardUpdated" => '$refresh',
         ];
     }
 

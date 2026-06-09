@@ -105,7 +105,7 @@ class BoardTable extends Component
         $group = $this->board->groups()->findOrFail($groupId);
         $group->items()->delete();
         $group->delete();
-        
+
         $this->openGroups = array_values(array_filter(
             $this->openGroups, fn($id) => $id !== $groupId
         ));
@@ -126,7 +126,7 @@ class BoardTable extends Component
         ], [
             'name' => ['required', 'string', 'max:255'],
         ])->validate();
-        
+
         $group = $this->board->groups()->findOrFail($groupId);
         $group->update(['name' => trim($validated['name'])]);
         $this->editingGroup = [];
@@ -307,7 +307,7 @@ class BoardTable extends Component
     protected function getListeners(): array
     {
         return [
-            "echo-private:boards.{$this->board->id},BoardUpdated" => '$refresh',
+            "echo:boards.{$this->board->id},BoardUpdated" => '$refresh',
         ];
     }
 

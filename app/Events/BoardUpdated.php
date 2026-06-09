@@ -3,15 +3,10 @@
 namespace App\Events;
 
 use App\Models\Board;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Broadcasting\Channel;
 
-class BoardUpdated implements ShouldBroadcastNow
+class BoardUpdated extends BroadcastEvent
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public function __construct(
         public Board $board,
@@ -22,10 +17,10 @@ class BoardUpdated implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        $channels = [new PrivateChannel("boards.{$this->board->id}")];
+        $channels = [new Channel("boards.{$this->board->id}")];
 
         if ($this->board->workspace_id) {
-            $channels[] = new PrivateChannel("workspaces.{$this->board->workspace_id}");
+            $channels[] = new Channel("workspaces.{$this->board->workspace_id}");
         }
 
         return $channels;

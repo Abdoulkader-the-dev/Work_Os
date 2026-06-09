@@ -18,7 +18,7 @@ class Notifications extends Component
         }
 
         return [
-            "echo-private:users.{$userId},NotificationSent" => 'refresh',
+            "echo:users.{$userId},NotificationSent" => 'refresh',
         ];
     }
 

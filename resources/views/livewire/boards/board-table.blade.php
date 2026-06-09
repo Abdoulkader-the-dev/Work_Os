@@ -1,30 +1,26 @@
 {{-- resources/views/livewire/boards/board-table.blade.php --}}
 
-@section('page-title', $board->name)
-
-@section('view-switcher')
-    <a class="view-btn active" href="{{ route('boards.show', $board) }}">Tableau</a>
-    <a class="view-btn" href="{{ route('boards.kanban', $board) }}">Kanban</a>
-    <a class="view-btn" href="{{ route('boards.calendar', $board) }}">Calendrier</a>
-@endsection
-
-@section('topbar-action')
-    <div style="display:flex;align-items:center;gap:8px;" data-tour-id="board-create-actions">
-        <a class="btn-primary" href="{{ route('boards.show', ['board' => $board, 'createTask' => 1]) }}">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            Nouvelle tâche
-        </a>
-            <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
-           data-tour-id="board-new-group"
-           style="height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-2);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-decoration:none;">
-            Nouveau groupe
-        </a>
-    </div>
-@endsection
-
 <div style="display:flex;flex-direction:column;gap:0;">
+    <div class="flex-between" style="align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="flex-center" style="gap:6px;">
+            <a class="view-btn active" href="{{ route('boards.show', $board) }}">Tableau</a>
+            <a class="view-btn" href="{{ route('boards.kanban', $board) }}">Kanban</a>
+            <a class="view-btn" href="{{ route('boards.calendar', $board) }}">Calendrier</a>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;" data-tour-id="board-create-actions">
+            <a class="btn-primary" href="{{ route('boards.show', ['board' => $board, 'createTask' => 1]) }}">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Nouvelle tâche
+            </a>
+            <a href="{{ route('boards.show', ['board' => $board, 'createGroup' => 1]) }}"
+               data-tour-id="board-new-group"
+               style="height:36px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border:1px solid var(--border);border-radius:8px;background:white;color:var(--text-2);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;text-decoration:none;">
+                Nouveau groupe
+            </a>
+        </div>
+    </div>
     @include('livewire.boards.partials.create-task-panel', [
         'groups' => $taskGroups,
         'taskContext' => [

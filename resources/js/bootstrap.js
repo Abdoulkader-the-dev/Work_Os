@@ -29,7 +29,7 @@ if (broadcastDriver === 'pusher') {
         wsHost: import.meta.env.VITE_REVERB_HOST ?? '127.0.0.1',
         wsPort: import.meta.env.VITE_REVERB_PORT ?? 8081,
         wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'http') === 'https',
+        forceTLS: false,
         enabledTransports: ['ws', 'wss'],
     });
 }

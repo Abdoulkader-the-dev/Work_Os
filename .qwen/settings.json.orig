@@ -9,7 +9,17 @@
       "Bash(\\\")",
       "Bash(set *)",
       "Bash(dir *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(composer *)",
+      "Bash(npm run *)",
+      "Bash(timeout *)",
+      "Bash(netstat *)",
+      "Bash(curl *)",
+      "Skill(reverb-broadcast-setup)",
+      "Bash(tasklist)",
+      "Bash(taskkill *)"
     ]
   },
   "$version": 4

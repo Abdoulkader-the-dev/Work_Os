@@ -1,23 +1,19 @@
 {{-- resources/views/livewire/boards/board-calendar.blade.php --}}
 
-@section('page-title', $board->name)
-
-@section('view-switcher')
-    <a class="view-btn" href="{{ route('boards.show', $board) }}">Tableau</a>
-    <a class="view-btn" href="{{ route('boards.kanban', $board) }}">Kanban</a>
-    <a class="view-btn active" href="{{ route('boards.calendar', $board) }}">Calendrier</a>
-@endsection
-
-@section('topbar-action')
-    <a class="btn-primary" href="{{ route('boards.calendar', ['board' => $board, 'createTask' => 1, 'month' => $month, 'year' => $year]) }}" data-tour-id="calendar-create-task">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Nouvelle tâche
-    </a>
-@endsection
-
 <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="flex-between" style="align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="flex-center" style="gap:6px;">
+            <a class="view-btn" href="{{ route('boards.show', $board) }}">Tableau</a>
+            <a class="view-btn" href="{{ route('boards.kanban', $board) }}">Kanban</a>
+            <a class="view-btn active" href="{{ route('boards.calendar', $board) }}">Calendrier</a>
+        </div>
+        <a class="btn-primary" href="{{ route('boards.calendar', ['board' => $board, 'createTask' => 1, 'month' => $month, 'year' => $year]) }}" data-tour-id="calendar-create-task">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2v10M2 7h10" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Nouvelle tâche
+        </a>
+    </div>
     @include('livewire.boards.partials.create-task-panel', [
         'groups' => $groups,
         'taskContext' => [

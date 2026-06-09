@@ -33,7 +33,7 @@ class MeetingList extends Component
         ];
 
         if ($workspaceId) {
-            $listeners["echo-private:workspaces.{$workspaceId},MeetingUpdated"] = 'refresh';
+            $listeners["echo:workspaces.{$workspaceId},MeetingUpdated"] = 'refresh';
         }
 
         return $listeners;

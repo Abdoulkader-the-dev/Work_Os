@@ -66,6 +66,47 @@ Either:
 4. **Logs**: Check Render logs for `migrate --force` success
 5. **Supabase**: Verify tables exist in Supabase dashboard after first deploy
 
+### Critical: Livewire render() must handle DB failures defensively
+
+When Supabase is unreachable, every Eloquent query in a Livewire `render()` throws an exception that surfaces as a 500. Wrap data-gathering in try/catch:
+
+```php
+public function render()
+{
+    try {
+        return view('livewire.dashboard', $this->gatherData());
+    } catch (\Throwable $e) {
+        Log::error('Dashboard render failed: ' . $e->getMessage());
+        return view('livewire.dashboard', $this->emptyData()); // safe fallback
+    }
+}
+```
+
+Also use null-safe operators on potentially null relations:
+```php
+// ❌ Crashes when group or board is null
+$item->group->board->name
+// ✅ Safe
+$item->group?->board->name
+```
+
+And filter null timestamps before calling `->diffForHumans()`:
+```php
+->filter(fn ($item) => $item->updated_at !== null)
+->map(fn ($item) => ['time' => $item->updated_at, ...])
+```
+
+### Critical: Blade component props must match exactly
+
+If a Blade component declares `@props(['value'])` and the caller omits `value=""`, the error appears in a compiled cache file (not the source):
+
+```
+ErrorException: Undefined variable $value
+at storage/framework/views/<hash>.php:33
+```
+
+Always pass all required props. See skill `blade-undefined-variable` for diagnosis steps.
+
 ### Breeze auth security baseline
 
 All Breeze forms in this project already include:

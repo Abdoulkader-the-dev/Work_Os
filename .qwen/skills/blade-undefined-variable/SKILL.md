@@ -60,6 +60,30 @@ When writing Blade components, add a null-safe fallback for variables that _migh
 
 This turns a crash into a graceful empty display during rapid prototyping.
 
+### Related: compact() variable name mismatch
+
+When a controller uses `compact('meeting')`, the variable in the view is `$meeting` (the model), not `$meetingId`.
+
+```
+ErrorException: Undefined variable $meetingId
+at resources/views/pages/meeting-show.blade.php:2
+```
+
+**Cause**: The blade references `$meetingId` but the controller passed `compact('meeting')`.
+
+**Fix**: Either change the blade to use the.compacted variable:
+```blade
+{{-- Controller: return view('pages.meeting-show', compact('meeting')); --}}
+<livewire:meetings.meeting-editor :meetingId="$meeting->id" />
+```
+
+Or change the controller to pass `meetingId` explicitly:
+```php
+return view('pages.meeting-show', ['meetingId' => $meeting->id]);
+```
+
+Blade's `Undefined variable` with an object suffix like `Id`, `_id`, or `_at` is almost always a compact mismatch — the developer assumed a different variable name than what the controller actually passed.
+
 ### Related: orphaned @endif / @endforeach
 
 When refactoring Blade views, orphaned closing directives (`@endif`, `@endforeach`, `</div>`, `</button>`) left over from removed blocks cause parse errors:

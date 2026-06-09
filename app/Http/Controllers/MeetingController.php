@@ -17,23 +17,18 @@ class MeetingController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
-        $workspace = $user->activeWorkspace;
+        return view('pages.meetings');
+    }
 
-        abort_unless($workspace, 422, 'Aucun workspace actif.');
+    public function create()
+    {
+        return view('pages.meeting-create');
+    }
 
-        $meetings = Meeting::query()
-            ->where(function ($query) use ($workspace, $user) {
-                $query->where('workspace_id', $workspace->id)
-                    ->orWhere(function ($legacy) use ($user) {
-                        $legacy->whereNull('workspace_id')
-                            ->where('user_id', $user->id);
-                    });
-            })
-            ->orderBy('date', 'desc')
-            ->get();
-
-        return response()->json(['meetings' => $meetings], 200);
+    public function edit(Meeting $meeting)
+    {
+        $this->authorize('update', $meeting);
+        return view('pages.meeting-edit', compact('meeting'));
     }
 
     public function store(MeetingStoreRequest $request)
@@ -63,7 +58,7 @@ class MeetingController extends Controller
     {
         $this->authorize('view', $meeting);
 
-        return response()->json(['meeting' => $meeting], 200);
+        return view('pages.meeting-show', compact('meeting'));
     }
 
     public function update(MeetingUpdateRequest $request, Meeting $meeting)

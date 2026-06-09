@@ -24,7 +24,7 @@ class Sidebar extends Component
         ];
 
         if ($workspaceId) {
-            $listeners["echo-private:workspaces.{$workspaceId},BoardUpdated"] = 'refresh';
+            $listeners["echo:workspaces.{$workspaceId},BoardUpdated"] = 'refresh';
         }
 
         return $listeners;
