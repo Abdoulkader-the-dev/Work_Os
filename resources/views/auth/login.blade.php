@@ -8,7 +8,7 @@
     </div>
 @endif
 
-<form method="POST" action="{{ route('login') }}" style="display:flex;flex-direction:column;gap:16px;">
+<form method="POST" action="{{ route('login') }}" style="display:flex;flex-direction:column;gap:16px;" novalidate>
     @csrf
 
     {{-- Titre --}}
@@ -28,7 +28,11 @@
                placeholder="caleb@unipod.com"
                required
                autofocus
-               autocomplete="username">
+               autocomplete="username"
+               maxlength="255"
+               spellcheck="false"
+               inputmode="email"
+               pattern="[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,}">
         @error('email')
             <p class="auth-error">{{ $message }}</p>
         @enderror
@@ -52,7 +56,9 @@
                class="auth-input"
                placeholder="••••••••"
                required
-               autocomplete="current-password">
+               autocomplete="current-password"
+               minlength="8"
+               maxlength="128">
         @error('password')
             <p class="auth-error">{{ $message }}</p>
         @enderror

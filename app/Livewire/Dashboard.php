@@ -5,12 +5,32 @@ namespace App\Livewire;
 use App\Models\Board;
 use App\Models\Item;
 use App\Models\Meeting;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Dashboard extends Component
 {
     public $workspace;
-    
+
+    private function emptyData(): array
+    {
+        return [
+            'workspace' => $this->workspace,
+            'completionRate' => 0,
+            'doneTasks' => 0,
+            'totalTasks' => 0,
+            'tasksThisWeek' => 0,
+            'weeklyDelta' => 0,
+            'activeBoards' => 0,
+            'tasksDueThisWeek' => 0,
+            'recentActivity' => collect(),
+            'boardsPreview' => collect(),
+            'urgentTasks' => collect(),
+            'blockedTasks' => 0,
+            'members' => collect(),
+        ];
+    }
+
     public function refresh()
     {
         // Re-render
@@ -40,27 +60,30 @@ class Dashboard extends Component
         $this->workspace = $user?->activeWorkspace;
 
         if ($user && $user->shouldShowOnboarding()) {
-            $user->markOnboardingStarted('dashboard');
+            try {
+                $user->markOnboardingStarted('dashboard');
+            } catch (\Throwable $e) {
+                Log::warning('Dashboard: failed to mark onboarding', ['error' => $e->getMessage()]);
+            }
         }
 
         if (!$this->workspace) {
-            return view('livewire.dashboard', [
-                'workspace' => null,
-                'completionRate' => 0,
-                'doneTasks' => 0,
-                'totalTasks' => 0,
-                'tasksThisWeek' => 0,
-                'weeklyDelta' => 0,
-                'activeBoards' => 0,
-                'tasksDueThisWeek' => 0,
-                'recentActivity' => collect(),
-                'boardsPreview' => collect(),
-                'urgentTasks' => collect(),
-                'blockedTasks' => 0,
-                'members' => collect(),
-            ]);
+            return view('livewire.dashboard', $this->emptyData());
         }
 
+        try {
+            return view('livewire.dashboard', $this->gatherData($user));
+        } catch (\Throwable $e) {
+            Log::error('Dashboard render failed: ' . $e->getMessage(), [
+                'exception' => get_class($e),
+            ]);
+
+            return view('livewire.dashboard', $this->emptyData());
+        }
+    }
+
+    private function gatherData($user): array
+    {
         $boardQuery = Board::query()
             ->where('workspace_id', $this->workspace?->id);
 
@@ -91,7 +114,7 @@ class Dashboard extends Component
             ->count();
 
         $boardsPreview = (clone $boardQuery)->withCount('items')->take(5)->get();
-        
+
         $urgentTasks = (clone $itemQuery)
             ->where(function ($query) {
                 $query->where('status', 'blocked')
@@ -113,9 +136,10 @@ class Dashboard extends Component
             ->latest('updated_at')
             ->take(4)
             ->get()
+            ->filter(fn ($item) => $item->updated_at !== null)
             ->map(fn ($item) => [
                 'title' => $item->name,
-                'subtitle' => ($item->group->board->name ?? 'Board') . ' / ' . ($item->group->name ?? 'Groupe'),
+                'subtitle' => ($item->group?->board?->name ?? 'Board') . ' / ' . ($item->group?->name ?? 'Groupe'),
                 'time' => $item->updated_at,
                 'badge' => match ($item->status) {
                     'done' => 'Achevé',
@@ -137,6 +161,7 @@ class Dashboard extends Component
             ->latest('date')
             ->take(3)
             ->get()
+            ->filter(fn ($meeting) => ($meeting->updated_at ?? $meeting->created_at) !== null)
             ->map(fn ($meeting) => [
                 'title' => $meeting->title,
                 'subtitle' => 'Réunion',
@@ -157,7 +182,7 @@ class Dashboard extends Component
             ->take(5)
             ->values();
 
-        return view('livewire.dashboard', [
+        return [
             'completionRate' => $completionRate,
             'doneTasks' => $doneTasks,
             'totalTasks' => $totalTasks,
@@ -171,6 +196,6 @@ class Dashboard extends Component
             'blockedTasks' => $blockedTasks,
             'members' => $members,
             'workspace' => $this->workspace,
-        ]);
+        ];
     }
 }
