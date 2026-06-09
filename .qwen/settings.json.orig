@@ -6,7 +6,10 @@
       "Bash(php *)",
       "Bash(cd *)",
       "Bash(findstr *)",
-      "Bash(\\\")"
+      "Bash(\\\")",
+      "Bash(set *)",
+      "Bash(dir *)",
+      "Bash(git add *)"
     ]
   },
   "$version": 4

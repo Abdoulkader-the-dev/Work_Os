@@ -98,6 +98,23 @@ databases:
     user: <db-name>
 ```
 
+### Critical: broadcast driver default must be `log`
+
+`config/broadcasting.php` must default to `log`, not `reverb` or `pusher`. During the Docker build, `composer install` triggers `package:discover`, which instantiates broadcast drivers. Without credentials at build time, the Pusher constructor crashes the entire build:
+
+```php
+// ❌ Build crashes: null auth_key at build time
+'default' => env('BROADCAST_CONNECTION', 'reverb'),
+
+// ✅ Safe: log driver needs no credentials
+'default' => env('BROADCAST_CONNECTION', 'log'),
+```
+
+Error message to watch for:
+```
+Pusher\Pusher::__construct(): Argument #1 ($auth_key) must be of type string, null given
+```
+
 ### Known limitations to warn about
 
 - **SQLite is not viable** on Render — ephemeral filesystem destroys data on restart. Use managed PostgreSQL from the start.

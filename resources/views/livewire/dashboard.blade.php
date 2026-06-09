@@ -112,6 +112,7 @@
 
             <x-kpi-card
                 label="Créées cette semaine"
+                value="{{ $tasksThisWeek }}"
                 subvalue="Tâches avec deadline"
             />
         </div>
