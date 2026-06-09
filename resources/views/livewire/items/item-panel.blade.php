@@ -40,11 +40,10 @@
                 <input type="text"
                        value="{{ $item->name }}"
                        style="flex:1;font-size:18px;font-weight:600;letter-spacing:-0.02em;background:transparent;border:none;border-bottom:2px solid transparent;outline:none;font-family:'DM Sans',sans-serif;color:var(--text-1);transition:border-color .15s;padding:0 0 2px;"
-                       onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='transparent'"
+                       onfocus="this.style.borderColor='var(--blue)'"
+                       onblur="this.style.borderColor='transparent'"
                        wire:blur="saveField('name', $event.target.value)">
-                    @endif
-                </button>
-            @endforeach
+            </div>
         </div>
 
         {{-- ── CONTENT ── --}}
