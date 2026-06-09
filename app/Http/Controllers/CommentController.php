@@ -13,7 +13,7 @@ class CommentController extends Controller
 
     public function index(Request $request, Item $item)
     {
-        abort_unless($request->user()->can('view', $item->group->board), 403);
+        abort_unless($item->group && $item->group->board && $request->user()->can('view', $item->group->board), 403);
 
         $comments = $item->comments()->with('user')->latest()->get();
 

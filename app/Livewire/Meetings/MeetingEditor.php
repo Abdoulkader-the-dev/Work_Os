@@ -44,7 +44,7 @@ class MeetingEditor extends Component
             $this->meetingId       = $meeting->id;
             $this->workspaceId     = $meeting->workspace_id ?? $workspace?->id;
             $this->title           = $meeting->title;
-            $this->date            = $meeting->date->format('Y-m-d');
+            $this->date            = $meeting->date?->format('Y-m-d') ?? now()->format('Y-m-d');
             $this->attendees       = $meeting->attendees ?? [];
             $this->bilan           = $meeting->bilan ?: [''];
             $this->recommendations = $meeting->recommendations ?: [''];

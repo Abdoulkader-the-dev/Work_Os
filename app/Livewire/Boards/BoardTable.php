@@ -103,6 +103,7 @@ class BoardTable extends Component
     {
         $this->authorize('update', $this->board);
         $group = $this->board->groups()->findOrFail($groupId);
+        $group->items()->delete();
         $group->delete();
         
         $this->openGroups = array_values(array_filter(
@@ -192,15 +193,17 @@ class BoardTable extends Component
         $allowed = ['name', 'deliverable', 'obstacles', 'deadline'];
         if (!in_array($field, $allowed)) return;
 
+        if ($field === 'name' && blank($value)) return;
+
         Validator::make([$field => $value], [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'deliverable' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'obstacles' => ['sometimes', 'nullable', 'string', 'max:5000'],
-            'deadline' => ['sometimes', 'nullable', 'date'],
+            'name' => ['required', 'string', 'max:255'],
+            'deliverable' => ['nullable', 'string', 'max:5000'],
+            'obstacles' => ['nullable', 'string', 'max:5000'],
+            'deadline' => ['nullable', 'date'],
         ])->validate();
 
         $item = $this->board->items()->findOrFail($itemId);
-        $item->update([$field => $value]);
+        $item->update([$field => $value ?: null]);
         $this->editingCell = [];
         $this->dispatch('item-updated');
         broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => $field]))->toOthers();
@@ -228,12 +231,15 @@ class BoardTable extends Component
         broadcast(new BoardUpdated($this->board->fresh(), 'item.updated', ['item_id' => $itemId, 'field' => 'priority']))->toOthers();
     }
 
-    public function updateDeadline(int $itemId, string $date): void
+    public function updateDeadline(int $itemId, ?string $date): void
     {
         $this->authorize('update', $this->board);
-        Validator::make(compact('date'), [
-            'date' => ['nullable', 'date'],
-        ])->validate();
+
+        if (filled($date)) {
+            Validator::make(compact('date'), [
+                'date' => ['date'],
+            ])->validate();
+        }
 
         $item = $this->board->items()->findOrFail($itemId);
         $item->update(['deadline' => $date ?: null]);

@@ -10,6 +10,7 @@ RUN apk add --no-cache \
     libzip-dev \
     zip \
     unzip \
+    gettext \
     && docker-php-ext-install pdo pdo_pgsql gd zip bcmath pcntl
 
 # Composer
@@ -37,6 +38,7 @@ COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
+ENV PORT=10000
 EXPOSE 10000
 
 CMD ["/start.sh"]

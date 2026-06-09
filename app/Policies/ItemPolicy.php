@@ -10,7 +10,8 @@ class ItemPolicy
     public function view(User $user, Item $item): bool
     {
         // Anyone with access to workspace can view (member or reader)
-        return $user->canViewWorkspace($item->group->board->workspace);
+        $workspace = $item->group?->board?->workspace;
+        return $workspace && $user->canViewWorkspace($workspace);
     }
 
     public function create(User $user): bool
@@ -26,8 +27,8 @@ class ItemPolicy
     public function update(User $user, Item $item): bool
     {
         // Member or admin can update (not reader)
-        $workspace = $item->group->board->workspace;
-        return $workspace->members()
+        $workspace = $item->group?->board?->workspace;
+        return $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->whereIn('role', ['member', 'admin'])
             ->exists();
@@ -36,8 +37,8 @@ class ItemPolicy
     public function delete(User $user, Item $item): bool
     {
         // Only admin can delete
-        $workspace = $item->group->board->workspace;
-        return $workspace->members()
+        $workspace = $item->group?->board?->workspace;
+        return $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->where('role', 'admin')
             ->exists();

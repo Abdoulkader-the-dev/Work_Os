@@ -10,8 +10,8 @@ class CommentPolicy
     public function view(User $user, Comment $comment): bool
     {
         // Anyone with access to workspace can view comments
-        $workspace = $comment->item->group->board->workspace;
-        return $user->canViewWorkspace($workspace);
+        $workspace = $comment->item?->group?->board?->workspace;
+        return $workspace && $user->canViewWorkspace($workspace);
     }
 
     public function create(User $user): bool
@@ -33,7 +33,7 @@ class CommentPolicy
     public function delete(User $user, Comment $comment): bool
     {
         $isAuthor = (int) $comment->user_id === (int) $user->id;
-        $workspace = $user->activeWorkspace;
+        $workspace = $comment->item?->group?->board?->workspace;
         $isAdmin = $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->where('role', 'admin')

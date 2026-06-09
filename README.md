@@ -523,6 +523,40 @@ Pour Vercel, le pooler transaction est généralement le meilleur choix pour év
 Si tu n'utilises pas encore Reverb ou Pusher en production, garde `BROADCAST_CONNECTION=log`.
 Ça évite qu'une config temps réel incomplète fasse tomber le bootstrap Laravel.
 
+### Déploiement sur Render
+
+Le projet inclut un fichier `render.yaml` prêt à l'emploi pour Render.
+
+**Étapes :**
+
+1. Pour ce dépôt sur Render (Blueprints).
+2. Render détecte `render.yaml` et crée automatiquement :
+   - un service Web Docker (`unipod-todo`)
+   - une base PostgreSQL managée (`unipod-db`)
+3. Le `APP_KEY` est généré automatiquement.
+4. Les migrations sont exécutées automatiquement à chaque déploiement (`php artisan migrate --force`).
+
+**Variables configurées automatiquement :**
+
+| Variable | Valeur |
+|---|---|
+| `APP_ENV` | `production` |
+| `APP_DEBUG` | `false` |
+| `APP_URL` | `https://unipod-todo.onrender.com` |
+| `DB_CONNECTION` | `pgsql` |
+| `SESSION_DRIVER` | `cookie` |
+| `CACHE_STORE` | `array` |
+| `QUEUE_CONNECTION` | `sync` |
+| `BROADCAST_CONNECTION` | `log` |
+| `LOG_CHANNEL` | `stderr` |
+
+**⚠️ Points d'attention :**
+
+- **APP_URL** : change l'URL dans `render.yaml` si tu renommes le service.
+- **Stockage fichiers** : le disque par défaut est `local`. Le filesystem Render étant éphémère, les fichiers stockés localement seront perdus à chaque redémarrage. Utilise S3 si tu as besoin de persistence.
+- **Queue worker** : `QUEUE_CONNECTION=sync` convient pour un petit usage. Pour plus de charge, utilise `QUEUE_CONNECTION=database` avec un worker dédié.
+- **Temps réel** : `BROADCAST_CONNECTION=log` désactive Echo/Revers. Configure Reverb ou Pusher si tu actives le temps réel.
+
 ### Installation propre
 
 1. Installer les dépendances PHP.

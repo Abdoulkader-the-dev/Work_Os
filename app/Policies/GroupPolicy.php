@@ -10,7 +10,8 @@ class GroupPolicy
     public function view(User $user, Group $group): bool
     {
         // Anyone with access to workspace can view (member or reader)
-        return $user->canViewWorkspace($group->board->workspace);
+        $workspace = $group->board?->workspace;
+        return $workspace && $user->canViewWorkspace($workspace);
     }
 
     public function create(User $user): bool
@@ -26,8 +27,8 @@ class GroupPolicy
     public function update(User $user, Group $group): bool
     {
         // Member or admin can update (not reader)
-        $workspace = $group->board->workspace;
-        return $workspace->members()
+        $workspace = $group->board?->workspace;
+        return $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->whereIn('role', ['member', 'admin'])
             ->exists();
@@ -36,8 +37,8 @@ class GroupPolicy
     public function delete(User $user, Group $group): bool
     {
         // Only admin can delete groups
-        $workspace = $group->board->workspace;
-        return $workspace->members()
+        $workspace = $group->board?->workspace;
+        return $workspace && $workspace->members()
             ->where('user_id', $user->id)
             ->where('role', 'admin')
             ->exists();

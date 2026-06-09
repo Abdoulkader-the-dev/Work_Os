@@ -23,12 +23,11 @@ class ItemPanel extends Component
     public string $newComment   = '';
     public string $searchAssignee = '';
 
-    protected $listeners = ['open-item-panel' => 'openPanel'];
-
     #[On('open-item-panel')]
     public function openPanel(int $itemId): void
     {
         $item = Item::with(['assignees', 'comments.user', 'group.board'])->findOrFail($itemId);
+        abort_unless($item->group && $item->group->board, 404);
         $this->authorize('view', $item->group->board);
         $this->item      = $item;
         $this->isOpen    = true;
@@ -80,7 +79,7 @@ class ItemPanel extends Component
         foreach ($mentionedUsers as $mentionedUser) {
             $notification = Notification::create([
                 'type' => 'mention',
-                'message' => '<strong>' . e(auth()->user()?->name ?? 'Un membre') . '</strong> vous a mentionné dans <strong>' . e($this->item->name) . '</strong>',
+                'message' => '<strong>' . (auth()->user()?->name ?? 'Un membre') . '</strong> vous a mentionné dans <strong>' . ($this->item->name) . '</strong>',
                 'action_url' => route('boards.show', $this->item->group->board),
                 'action_label' => 'Voir la tâche',
                 'user_id' => $mentionedUser->id,
@@ -109,7 +108,7 @@ class ItemPanel extends Component
         if ($userId !== auth()->id()) {
             $notification = Notification::create([
                 'type' => 'assignment',
-                'message' => '<strong>' . e(auth()->user()?->name ?? 'Un membre') . '</strong> vous a assigné la tâche <strong>' . e($this->item->name) . '</strong>',
+                'message' => '<strong>' . (auth()->user()?->name ?? 'Un membre') . '</strong> vous a assigné la tâche <strong>' . ($this->item->name) . '</strong>',
                 'action_url' => route('boards.show', $this->item->group->board),
                 'action_label' => 'Voir la tâche',
                 'user_id' => $userId,
@@ -133,7 +132,7 @@ class ItemPanel extends Component
 
     public function getAvailableUsersProperty()
     {
-        if (!$this->item) return collect();
+        if (!$this->item || !$this->item->group || !$this->item->group->board) return collect();
         $workspace = $this->item->group->board->workspace;
 
         return User::whereHas('workspaces', fn ($query) => $query->whereKey($workspace->id))

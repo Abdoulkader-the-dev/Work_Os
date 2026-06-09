@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(C:\\VSCode-Projet\\UniPod-To-Do-1\\routes/**)",
+      "Bash(type *)",
+      "Bash(php *)",
+      "Bash(cd *)",
+      "Bash(findstr *)",
+      "Bash(\\\")"
+    ]
+  },
+  "$version": 4
+}
