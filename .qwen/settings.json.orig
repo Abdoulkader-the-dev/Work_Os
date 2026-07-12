@@ -19,7 +19,8 @@
       "Bash(curl *)",
       "Skill(reverb-broadcast-setup)",
       "Bash(tasklist)",
-      "Bash(taskkill *)"
+      "Bash(taskkill *)",
+      "Bash(sc *)"
     ]
   },
   "$version": 4

@@ -1,6 +1,9 @@
 .git
 node_modules
+vendor
+public/build
 .env
 .env.*
 storage/logs/*
 bootstrap/cache/*.php
+tests

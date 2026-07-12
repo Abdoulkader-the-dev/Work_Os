@@ -20,7 +20,8 @@
       "Skill(reverb-broadcast-setup)",
       "Bash(tasklist)",
       "Bash(taskkill *)",
-      "Bash(sc *)"
+      "Bash(sc *)",
+      "Agent(Explore)"
     ]
   },
   "$version": 4

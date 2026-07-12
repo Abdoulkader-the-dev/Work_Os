@@ -5,6 +5,8 @@ services:
     plan: starter
     healthCheckPath: /up
     envVars:
+      - key: CONTAINER_ROLE
+        value: web
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -17,24 +19,83 @@ services:
         value: en
       - key: DB_CONNECTION
         value: pgsql
+      - key: DB_HOST
+        sync: false   # tu rentres la valeur manuellement dans le dashboard Render
+      - key: DB_PORT
+        value: "6543"   # port du Transaction Pooler
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
       - key: SESSION_DRIVER
         value: cookie
       - key: CACHE_STORE
-        value: array
+        value: database
       - key: QUEUE_CONNECTION
         value: sync
       - key: BROADCAST_CONNECTION
-        value: log
+        value: reverb
       - key: FILESYSTEM_DISK
         value: local
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
         value: error
+      - key: REVERB_APP_ID
+        value: "unipod_reverb_id"
+      - key: REVERB_APP_KEY
+        value: "unipod_reverb_key"
+      - key: REVERB_APP_SECRET
+        generateValue: true
+      - key: REVERB_HOST
+        value: "unipod-todo-reverb.onrender.com"
+      - key: REVERB_PORT
+        value: 443
+      - key: REVERB_SCHEME
+        value: https
+      - key: VITE_REVERB_APP_KEY
+        value: "unipod_reverb_key"
+      - key: VITE_REVERB_HOST
+        value: "unipod-todo-reverb.onrender.com"
+      - key: VITE_REVERB_PORT
+        value: 443
+      - key: VITE_REVERB_SCHEME
+        value: https
     autoDeploy: true
 
-databases:
-  - name: unipod-db
+  - type: web
+    name: unipod-todo-reverb
+    runtime: docker
     plan: starter
-    databaseName: unipod
-    user: unipod
+    envVars:
+      - key: CONTAINER_ROLE
+        value: reverb
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        fromService:
+          type: web
+          name: unipod-todo
+          envVarKey: APP_KEY
+      - key: REVERB_APP_ID
+        value: "unipod_reverb_id"
+      - key: REVERB_APP_KEY
+        value: "unipod_reverb_key"
+      - key: REVERB_APP_SECRET
+        fromService:
+          type: web
+          name: unipod-todo
+          envVarKey: REVERB_APP_SECRET
+      - key: REVERB_HOST
+        value: "0.0.0.0"
+      - key: REVERB_PORT
+        value: 8080
+      - key: REVERB_SCHEME
+        value: http
+    autoDeploy: true
